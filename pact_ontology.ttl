@@ -1,59 +1,30 @@
 @prefix pact: <http://your-org.com/ns/pact#> .
-@prefix uco-core: <https://ontology.unifiedcyberontology.org/uco/core/> .
-@prefix uco-obs: <https://ontology.unifiedcyberontology.org/uco/observable/> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-# -----------------------------------------------------------
-# 1. ONTOLOGY DEFINITION
-# -----------------------------------------------------------
-pact:Ontology a owl:Ontology ;
-    rdfs:label "PACT: Policy Automation & Compliance Traceability" ;
-    rdfs:comment "An extension of UCO to map Governance logic to Operational Reality." .
+# ----------------------------------------------------------------
+# PACT ONTOLOGY DEFINITION
+# This file explains the "vocabulary" used in the Compliance Graph.
+# ----------------------------------------------------------------
 
-# -----------------------------------------------------------
-# 2. CLASSES (The Nouns)
-# -----------------------------------------------------------
-
-# A specific rule from a framework (e.g., "NIST AC-1", "Corp Policy 5.2")
-pact:ControlRequirement a owl:Class ;
-    rdfs:subClassOf uco-core:UcoObject ;
-    rdfs:label "Control Requirement" .
-
-# The activity of checking a control (The "Event" of compliance)
 pact:ComplianceAssessment a owl:Class ;
-    rdfs:subClassOf uco-core:Assertion ;
-    rdfs:label "Compliance Assessment" .
+    rdfs:label "Compliance Assessment" ;
+    rdfs:comment "A record representing the result of checking a specific piece of evidence against a specific control." .
 
-# The machine-readable result (Pass/Fail/Error)
-pact:AssessmentResult a owl:Class ;
-    rdfs:subClassOf uco-core:UcoObject ;
-    rdfs:label "Assessment Result" .
-
-# -----------------------------------------------------------
-# 3. PROPERTIES (The Verbs)
-# -----------------------------------------------------------
-
-# Relationship: An assessment checks a specific control
-pact:validatesControl a owl:ObjectProperty ;
-    rdfs:domain pact:ComplianceAssessment ;
-    rdfs:range pact:ControlRequirement ;
-    rdfs:label "validates control" .
-
-# Relationship: An assessment looks at specific evidence (The UCO Observable)
 pact:evaluatedEvidence a owl:ObjectProperty ;
+    rdfs:label "Evaluated Evidence" ;
     rdfs:domain pact:ComplianceAssessment ;
-    rdfs:range uco-core:UcoObject ; 
-    rdfs:label "evaluated evidence" .
+    rdfs:range owl:Thing ;
+    rdfs:comment "Links the assessment to the specific file, network connection, or asset that was checked." .
 
-# Relationship: The assessment produced a specific verdict
-pact:hasResult a owl:ObjectProperty ;
+pact:hasVerdict a owl:DatatypeProperty ;
+    rdfs:label "Has Verdict" ;
     rdfs:domain pact:ComplianceAssessment ;
-    rdfs:range pact:AssessmentResult ;
-    rdfs:label "has result" .
+    rdfs:range xsd:string ;
+    rdfs:comment "The result of the assessment (e.g., 'PASS' or 'FAIL')." .
 
-# Data Property: The actual text string "PASS" or "FAIL"
-pact:verdictValue a owl:DatatypeProperty ;
-    rdfs:domain pact:AssessmentResult ;
-    rdfs:range xsd:string .
+pact:Benchmark a owl:Class ;
+    rdfs:label "Benchmark" ;
+    rdfs:comment "The standard or policy being checked (e.g., NIST 800-53)." .
