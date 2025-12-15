@@ -1,43 +1,58 @@
+import json
+import datetime
 from rdflib import Graph, Literal, BNode, RDF, Namespace, URIRef
 from rdflib.namespace import XSD, RDFS
 from pyshacl import validate
-import datetime
 
 # 1. Setup Namespaces
 PACT = Namespace("http://your-org.com/ns/pact#")
 UCO_OBS = Namespace("https://ontology.unifiedcyberontology.org/uco/observable/")
 UCO_CORE = Namespace("https://ontology.unifiedcyberontology.org/uco/core/")
+SH = Namespace("http://www.w3.org/ns/shacl#")
 
-import json  # Add this at the very top with your other imports
+# 2. Ingest Data (List of Events)
+try:
+    with open('raw_event.json', 'r') as f:
+        event_stream = json.load(f)
+except FileNotFoundError:
+    print("Error: raw_event.json not found.")
+    exit()
 
-# ... (keep your namespaces setup)
+print(f"--- Step 1: Ingested {len(event_stream)} Events ---")
 
-# 2. Ingest Data (REAL INPUT)
-# Instead of fake data, we load the OCSF log file
-with open('raw_event.json', 'r') as f:
-    ocsf_log = json.load(f)
-
-# Map OCSF log to our simple internal format
-# (In a real app, this part is called "Normalization")
-raw_log = {
-    "filename": ocsf_log['file']['name'],
-    "owner": ocsf_log['user']['name'],
-    "path": ocsf_log['file']['path']
-}
-
-print(f"--- Step 1: Ingested Log for {raw_log['filename']} ---")
-# 3. Create the Graph (The "Evidence Store")
+# 3. Create the Evidence Graph
 data_graph = Graph()
 data_graph.bind("pact", PACT)
 data_graph.bind("uco-obs", UCO_OBS)
 
-file_node = BNode() # This represents the specific file we found
+# We need to keep track of the nodes we create so we can link them later
+evidence_tracker = [] 
 
-data_graph.add((file_node, RDF.type, UCO_OBS.File))
-data_graph.add((file_node, UCO_OBS.owner, Literal(raw_log["owner"])))
-data_graph.add((file_node, UCO_OBS.fileName, Literal(raw_log["filename"])))
+for event in event_stream:
+    evidence_node = BNode() # Create a unique ID for this specific event
+    
+    # Store it in our list so we can create an assessment for it later
+    evidence_tracker.append({
+        "node": evidence_node,
+        "description": f"{event['type']} event",
+        "id": event.get("id", "unknown")
+    })
 
-# 4. Load Policy (The Rules)
+    if event["type"] == "file_access":
+        # Map File Data
+        data_graph.add((evidence_node, RDF.type, UCO_OBS.File))
+        data_graph.add((evidence_node, UCO_OBS.fileName, Literal(event["file"]["name"])))
+        data_graph.add((evidence_node, UCO_OBS.owner, Literal(event["user"]["name"])))
+        print(f"Mapped File: {event['file']['name']}")
+        
+    elif event["type"] == "network_connection":
+        # Map Network Data
+        data_graph.add((evidence_node, RDF.type, UCO_OBS.NetworkConnection))
+        data_graph.add((evidence_node, UCO_OBS.destinationPort, Literal(event["destination"]["port"], datatype=XSD.integer)))
+        data_graph.add((evidence_node, UCO_OBS.protocol, Literal(event["protocol"])))
+        print(f"Mapped Network: Port {event['destination']['port']}")
+
+# 4. Load Policy
 shacl_graph = Graph()
 shacl_graph.parse("policy_rules.ttl", format="turtle")
 
@@ -52,32 +67,32 @@ conforms, results_graph, results_text = validate(
 )
 
 # 6. GENERATE PACT TRACEABILITY ARTIFACT
-# This is the "Magic Step". We create a permanent record of this check.
-# 6. GENERATE PACT TRACEABILITY ARTIFACT
-print("--- Step 3: Generating PACT Compliance Record ---")
+# Now we loop through the items we tracked and create a record for EACH one.
+print("--- Step 3: Generating PACT Compliance Records ---")
 
-assessment_node = BNode() 
-
-# A. Define the Assessment
-data_graph.add((assessment_node, RDF.type, PACT.ComplianceAssessment))
-data_graph.add((assessment_node, RDFS.label, Literal("Automated Config Check")))
-
-# B. Link to GOVERNANCE (The "Why")
-# We assert that this check validates NIST 800-53 Control AC-6
-nist_control = URIRef("https://nvd.nist.gov/800-53/AC-6")
-data_graph.add((assessment_node, PACT.validatesControl, nist_control))
-
-# C. Link to EVIDENCE (The "What")
-data_graph.add((assessment_node, PACT.evaluatedEvidence, file_node))
-
-# D. Link to RESULT (The "Verdict")
-verdict = "PASS" if conforms else "FAIL"
-data_graph.add((assessment_node, PACT.hasVerdict, Literal(verdict)))
-
-# Add Timestamp
 timestamp = datetime.datetime.now().isoformat()
-data_graph.add((assessment_node, UCO_CORE.objectCreatedTime, Literal(timestamp, datatype=XSD.dateTime)))
+
+for item in evidence_tracker:
+    assessment_node = BNode()
+    
+    # 1. Define the Assessment Object
+    data_graph.add((assessment_node, RDF.type, PACT.ComplianceAssessment))
+    data_graph.add((assessment_node, RDFS.label, Literal(f"Check for {item['id']}")))
+    data_graph.add((assessment_node, UCO_CORE.objectCreatedTime, Literal(timestamp, datatype=XSD.dateTime)))
+    
+    # 2. Link to Evidence
+    data_graph.add((assessment_node, PACT.evaluatedEvidence, item['node']))
+    
+    # 3. Determine Verdict (Did this specific node fail?)
+    # We query the SHACL results graph to see if this node is listed as a "focusNode" for a violation.
+    # If the node is found in the failure report, it FAILED. Otherwise, it PASSED.
+    is_failure = (None, SH.focusNode, item['node']) in results_graph
+    
+    verdict = "FAIL" if is_failure else "PASS"
+    data_graph.add((assessment_node, PACT.hasVerdict, Literal(verdict)))
+    
+    print(f" > Assessment for {item['description']}: {verdict}")
 
 # 7. Print the Final Graph
-print("\n=== FINAL PACT GRAPH (The Bridge) ===")
+print("\n=== FINAL PACT GRAPH (Multi-Domain) ===")
 print(data_graph.serialize(format='turtle'))
