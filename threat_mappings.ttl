@@ -1,0 +1,31 @@
+@prefix pact: <http://your-org.com/ns/pact#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# ----------------------------------------------------------------
+# THREAT & VULNERABILITY MAPPINGS
+# Maps Vulnerabilities (CVEs) to the Controls that mitigate them.
+# ----------------------------------------------------------------
+
+# 1. Define Vulnerabilities
+pact:CVE_2021_44228 a pact:Vulnerability ;
+    rdfs:label "CVE-2021-44228 (Log4Shell)" ;
+    rdfs:comment "Remote Code Execution in Log4j." .
+
+pact:CVE_2017_0144 a pact:Vulnerability ;
+    rdfs:label "CVE-2017-0144 (EternalBlue)" ;
+    rdfs:comment "SMB Remote Code Execution (WannaCry)." .
+
+pact:Telnet_Exposure a pact:Vulnerability ;
+    rdfs:label "CWE-200: Exposure of Sensitive Info (Telnet)" ;
+    rdfs:comment "Cleartext transmission of sensitive data via Telnet." .
+
+# 2. Map Controls to Vulnerabilities (The "Mitigation" Link)
+
+# NIST CM-7 (Least Functionality/Ports) mitigates Telnet Exposure & EternalBlue (by blocking port 445)
+pact:Control_CM7 pact:mitigates pact:Telnet_Exposure .
+pact:Control_CM7 pact:mitigates pact:CVE_2017_0144 .
+
+# NIST AC-3 (Access Enforcement) mitigates Log4Shell (by limiting what the compromised user can do/access)
+# This is a "Defense in Depth" mitigation, not a patch, but vital for "Mitigation Status".
+pact:Control_AC3 pact:mitigates pact:CVE_2021_44228 .
+

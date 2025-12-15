@@ -1,22 +1,53 @@
-@prefix ns1: <https://ontology.unifiedcyberontology.org/uco/core/> .
 @prefix pact: <http://your-org.com/ns/pact#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix uco-obs: <https://ontology.unifiedcyberontology.org/uco/observable/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-[] a pact:ComplianceAssessment ;
-    rdfs:label "Check for evt-002" ;
-    pact:evaluatedEvidence [ a uco-obs:NetworkConnection ;
-            uco-obs:destinationPort 23 ;
-            uco-obs:protocol "tcp" ] ;
-    pact:hasVerdict "FAIL" ;
-    ns1:objectCreatedTime "2025-12-15T14:33:19.203476"^^xsd:dateTime .
+pact:HRPortal a pact:System ;
+    rdfs:label "HR Employee Portal" ;
+    pact:hasComponent _:N8f798968097e44419d6e9db967bf1240 ;
+    pact:ownedByTeam "CorpIT" ;
+    pact:supports pact:EmployeeOnboarding .
+
+pact:PaymentGatewayCluster a pact:System ;
+    rdfs:label "Payment Gateway Prod" ;
+    pact:hasComponent _:N240469dbc5df4d7d94c9d7433ea7e6de ;
+    pact:ownedByTeam "FinTech-Ops" ;
+    pact:supports pact:PaymentProcessing .
+
+pact:Control_AC3 a pact:Control ;
+    rdfs:label "NIST AC-3: Access Enforcement" .
+
+pact:Control_CM7 a pact:Control ;
+    rdfs:label "NIST CM-7: Least Functionality" .
+
+pact:EmployeeOnboarding a pact:BusinessProcess ;
+    rdfs:label "Employee Onboarding" ;
+    rdfs:comment "Internal HR process for new hires." .
+
+pact:PaymentProcessing a pact:BusinessProcess ;
+    rdfs:label "Credit Card Payment Processing" ;
+    rdfs:comment "Critical process for handling customer transactions." .
 
 [] a pact:ComplianceAssessment ;
     rdfs:label "Check for evt-001" ;
-    pact:evaluatedEvidence [ a uco-obs:File ;
-            uco-obs:fileName "sensitive_config.yaml" ;
-            uco-obs:owner "root" ] ;
+    pact:evaluatedEvidence _:N8f798968097e44419d6e9db967bf1240 ;
+    pact:generatedAt "2025-12-15T15:32:45.516464"^^xsd:dateTime ;
     pact:hasVerdict "FAIL" ;
-    ns1:objectCreatedTime "2025-12-15T14:33:19.203476"^^xsd:dateTime .
+    pact:validatesControl pact:Control_AC3 .
+
+[] a pact:ComplianceAssessment ;
+    rdfs:label "Check for evt-002" ;
+    pact:evaluatedEvidence _:N240469dbc5df4d7d94c9d7433ea7e6de ;
+    pact:generatedAt "2025-12-15T15:32:45.516464"^^xsd:dateTime ;
+    pact:hasVerdict "FAIL" ;
+    pact:validatesControl pact:Control_CM7 .
+
+_:N240469dbc5df4d7d94c9d7433ea7e6de a uco-obs:NetworkConnection ;
+    uco-obs:destinationPort 23 ;
+    uco-obs:protocol "tcp" .
+
+_:N8f798968097e44419d6e9db967bf1240 a uco-obs:File ;
+    uco-obs:fileName "sensitive_config.yaml" ;
+    uco-obs:owner "root" .
 

@@ -1,42 +1,267 @@
 {
   "assessment-results": {
-    "uuid": "7f2557e1-cc65-416c-8046-53c67b610410",
+    "uuid": "6efd101e-0f7a-43b1-a9dc-2e7251155c20",
     "metadata": {
-      "title": "PACT Automated Compliance Scan",
-      "last-modified": "2025-12-15T13:06:58.834389Z",
+      "title": "PACT Automated Compliance Assessment",
+      "last-modified": "2025-12-15T16:12:04.787613",
       "version": "1.0.0",
-      "oscal-version": "1.1.2"
+      "oscal-version": "1.1.2",
+      "roles": [
+        {
+          "id": "auditor",
+          "title": "Automated Auditor (PACT)"
+        }
+      ]
+    },
+    "import-ap": {
+      "href": "https://raw.githubusercontent.com/complytime/baseline-demo/main/plan.json"
     },
     "results": [
       {
-        "uuid": "79905248-c746-45ef-8274-cb3b0b5103bd",
-        "title": "Daily Compliance Run",
+        "uuid": "80970726-2e03-4c8d-acca-cec6245df998",
+        "title": "Assessment of HR Employee Portal",
+        "description": "Automated continuous monitoring scan.",
+        "start": "2025-12-15T16:12:04.834743",
         "observations": [
           {
-            "uuid": "e7d69898-f112-476d-93f7-b1d4df1b5d81",
-            "title": "Automated Assessment of ac-6",
-            "description": "File 'sensitive_config.yaml' is owned by 'root'",
+            "uuid": "c500b1b6-3645-4e2a-b0f8-926c5d6d7f28",
+            "description": "Check for NIST AC-3: Access Enforcement on log4j.properties",
             "methods": [
-              "TEST"
+              "TEST-AUTOMATED"
             ],
             "types": [
               "finding"
             ],
+            "relevant-evidence": [
+              {
+                "href": "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dvuln-test-002",
+                "description": "Raw Log / Technical Proof"
+              }
+            ],
             "subjects": [
               {
-                "subject-uuid": "d4a63202-9cb2-4d6d-a728-0dcdd27d02ea",
                 "type": "component",
-                "title": "Linux Server Configuration"
+                "title": "log4j.properties"
               }
+            ],
+            "title": "PASS: NIST AC-3: Access Enforcement",
+            "props": [
+              {
+                "name": "status",
+                "value": "pass"
+              }
+            ]
+          },
+          {
+            "uuid": "8b68d008-a928-4ccf-9138-940455f9af13",
+            "description": "Check for NIST AC-3: Access Enforcement on log4j.properties",
+            "methods": [
+              "TEST-AUTOMATED"
+            ],
+            "types": [
+              "finding"
             ],
             "relevant-evidence": [
               {
-                "href": "./raw_event.json",
-                "description": "OCSF Log File from Splunk"
+                "href": "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dvuln-test-001",
+                "description": "Raw Log / Technical Proof"
               }
             ],
-            "collected": "2025-12-15T13:06:58.834409Z",
-            "observation-status": "not-satisfied"
+            "subjects": [
+              {
+                "type": "component",
+                "title": "log4j.properties"
+              }
+            ],
+            "title": "PASS: NIST AC-3: Access Enforcement",
+            "props": [
+              {
+                "name": "status",
+                "value": "pass"
+              }
+            ]
+          },
+          {
+            "uuid": "8691b01b-52e7-40c3-a7e2-f2d1c41548e5",
+            "description": "Check for NIST AC-3: Access Enforcement on critical_secrets.yaml",
+            "methods": [
+              "TEST-AUTOMATED"
+            ],
+            "types": [
+              "finding"
+            ],
+            "relevant-evidence": [
+              {
+                "href": "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dsim-event-1765831455141",
+                "description": "Raw Log / Technical Proof"
+              }
+            ],
+            "subjects": [
+              {
+                "type": "component",
+                "title": "critical_secrets.yaml"
+              }
+            ],
+            "title": "FAILURE: NIST AC-3: Access Enforcement",
+            "props": [
+              {
+                "name": "status",
+                "value": "fail"
+              }
+            ]
+          },
+          {
+            "uuid": "3f29c22d-a2fb-46db-850c-0d6c2042459f",
+            "description": "Check for NIST AC-3: Access Enforcement on prod_db_config.xml",
+            "methods": [
+              "TEST-AUTOMATED"
+            ],
+            "types": [
+              "finding"
+            ],
+            "relevant-evidence": [
+              {
+                "href": "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dapi-test-001",
+                "description": "Raw Log / Technical Proof"
+              }
+            ],
+            "subjects": [
+              {
+                "type": "component",
+                "title": "prod_db_config.xml"
+              }
+            ],
+            "title": "FAILURE: NIST AC-3: Access Enforcement",
+            "props": [
+              {
+                "name": "status",
+                "value": "fail"
+              }
+            ]
+          },
+          {
+            "uuid": "cc1e9c34-9a70-4ac6-89e7-db542fa6dca1",
+            "description": "Check for NIST AC-3: Access Enforcement on sensitive_config.yaml",
+            "methods": [
+              "TEST-AUTOMATED"
+            ],
+            "types": [
+              "finding"
+            ],
+            "relevant-evidence": [
+              {
+                "href": "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Devt-001",
+                "description": "Raw Log / Technical Proof"
+              }
+            ],
+            "subjects": [
+              {
+                "type": "component",
+                "title": "sensitive_config.yaml"
+              }
+            ],
+            "title": "FAILURE: NIST AC-3: Access Enforcement",
+            "props": [
+              {
+                "name": "status",
+                "value": "fail"
+              }
+            ]
+          },
+          {
+            "uuid": "282ed1d1-2a63-4529-bd0c-15ae43b1e288",
+            "description": "Check for NIST AC-3: Access Enforcement on sensitive_config.yaml",
+            "methods": [
+              "TEST-AUTOMATED"
+            ],
+            "types": [
+              "finding"
+            ],
+            "relevant-evidence": [
+              {
+                "href": "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Devt-001",
+                "description": "Raw Log / Technical Proof"
+              }
+            ],
+            "subjects": [
+              {
+                "type": "component",
+                "title": "sensitive_config.yaml"
+              }
+            ],
+            "title": "PASS: NIST AC-3: Access Enforcement",
+            "props": [
+              {
+                "name": "status",
+                "value": "pass"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "uuid": "883f70b1-b862-4269-bb44-6e4d03bd4654",
+        "title": "Assessment of Payment Gateway Prod",
+        "description": "Automated continuous monitoring scan.",
+        "start": "2025-12-15T16:12:04.834847",
+        "observations": [
+          {
+            "uuid": "1d4c074e-fb6d-4b9e-9a88-02d0f7484ef8",
+            "description": "Check for NIST CM-7: Least Functionality on 23",
+            "methods": [
+              "TEST-AUTOMATED"
+            ],
+            "types": [
+              "finding"
+            ],
+            "relevant-evidence": [
+              {
+                "href": "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Devt-002",
+                "description": "Raw Log / Technical Proof"
+              }
+            ],
+            "subjects": [
+              {
+                "type": "component",
+                "title": "23"
+              }
+            ],
+            "title": "FAILURE: NIST CM-7: Least Functionality",
+            "props": [
+              {
+                "name": "status",
+                "value": "fail"
+              }
+            ]
+          },
+          {
+            "uuid": "91847c39-1573-4cd8-9b01-5f398c768a01",
+            "description": "Check for NIST CM-7: Least Functionality on 443",
+            "methods": [
+              "TEST-AUTOMATED"
+            ],
+            "types": [
+              "finding"
+            ],
+            "relevant-evidence": [
+              {
+                "href": "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Devt-002",
+                "description": "Raw Log / Technical Proof"
+              }
+            ],
+            "subjects": [
+              {
+                "type": "component",
+                "title": "443"
+              }
+            ],
+            "title": "PASS: NIST CM-7: Least Functionality",
+            "props": [
+              {
+                "name": "status",
+                "value": "pass"
+              }
+            ]
           }
         ]
       }
