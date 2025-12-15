@@ -1,0 +1,33 @@
+@prefix pact: <http://your-org.com/ns/pact#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# ----------------------------------------------------------------
+# SYSTEM CONTEXT (The "CMDB" Graph)
+# This graph defines what assets exist and what business value they hold.
+# ----------------------------------------------------------------
+
+# 1. Business Processes
+pact:PaymentProcessing a pact:BusinessProcess ;
+    rdfs:label "Credit Card Payment Processing" ;
+    rdfs:comment "Critical process for handling customer transactions." .
+
+pact:EmployeeOnboarding a pact:BusinessProcess ;
+    rdfs:label "Employee Onboarding" ;
+    rdfs:comment "Internal HR process for new hires." .
+
+# 2. Information Systems
+pact:PaymentGatewayCluster a pact:System ;
+    rdfs:label "Payment Gateway Prod" ;
+    pact:supports pact:PaymentProcessing ;
+    pact:ownedByTeam "FinTech-Ops" .
+
+pact:HRPortal a pact:System ;
+    rdfs:label "HR Employee Portal" ;
+    pact:supports pact:EmployeeOnboarding ;
+    pact:ownedByTeam "CorpIT" .
+
+# 3. Technical Asset Links (Mocking the link between logical and physical)
+# In a real world, this might link via IP address or Hostname
+

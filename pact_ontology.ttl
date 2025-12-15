@@ -3,11 +3,81 @@
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix uco-core: <https://ontology.unifiedcyberontology.org/uco/core/> .
 
 # ----------------------------------------------------------------
 # PACT ONTOLOGY DEFINITION
-# This file explains the "vocabulary" used in the Compliance Graph.
 # ----------------------------------------------------------------
+
+# ==========================================
+# 1. GOVERNANCE LAYER (The Rules)
+# ==========================================
+
+pact:Control a owl:Class ;
+    rdfs:label "Security Control" ;
+    rdfs:comment "A specific security requirement (e.g., NIST CM-7, AC-3)." .
+
+pact:Benchmark a owl:Class ;
+    rdfs:label "Benchmark" ;
+    rdfs:comment "The standard or policy family (e.g., NIST 800-53, PCI-DSS)." .
+
+pact:partOfBenchmark a owl:ObjectProperty ;
+    rdfs:domain pact:Control ;
+    rdfs:range pact:Benchmark ;
+    rdfs:label "Part of Benchmark" .
+
+# Cross-Walking Property
+pact:satisfiesRequirement a owl:DatatypeProperty ;
+    rdfs:domain pact:Control ;
+    rdfs:range xsd:string ;
+    rdfs:label "Satisfies Requirement" ;
+    rdfs:comment "Maps this control to requirements in other frameworks (e.g., 'PCI-DSS 7.1', 'ISO A.9.2')." .
+
+# ==========================================
+# 2. THREAT & VULNERABILITY LAYER (New)
+# ==========================================
+
+pact:Vulnerability a owl:Class ;
+    rdfs:label "Vulnerability" ;
+    rdfs:comment "A known weakness (e.g., CVE-2021-44228)." .
+
+pact:mitigates a owl:ObjectProperty ;
+    rdfs:domain pact:Control ;
+    rdfs:range pact:Vulnerability ;
+    rdfs:label "Mitigates" ;
+    rdfs:comment "Indicates that this control reduces or eliminates the risk of the target vulnerability." .
+
+# ==========================================
+# 3. ASSET LAYER (The Context)
+# ==========================================
+
+pact:BusinessProcess a owl:Class ;
+    rdfs:label "Business Process" ;
+    rdfs:comment "A high-level organizational function (e.g., 'Payment Processing', 'HR Onboarding') that relies on IT systems." .
+
+pact:System a owl:Class ;
+    rdfs:label "Information System" ;
+    rdfs:comment "A logical grouping of technical assets (e.g., 'Payment Gateway Cluster')." .
+
+# Relationships
+pact:supports a owl:ObjectProperty ;
+    rdfs:domain pact:System ;
+    rdfs:range pact:BusinessProcess ;
+    rdfs:comment "Indicates that a system is required for a business process to function." .
+
+pact:hasComponent a owl:ObjectProperty ;
+    rdfs:domain pact:System ;
+    rdfs:range uco-core:UcoObject ;
+    rdfs:comment "Links a logical system to specific technical assets (Servers, Files, etc.)." .
+
+pact:ownedByTeam a owl:DatatypeProperty ;
+    rdfs:domain pact:System ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The team responsible for the system." .
+
+# ==========================================
+# 4. OBSERVABILITY LAYER (The Reality)
+# ==========================================
 
 pact:ComplianceAssessment a owl:Class ;
     rdfs:label "Compliance Assessment" ;
@@ -19,12 +89,26 @@ pact:evaluatedEvidence a owl:ObjectProperty ;
     rdfs:range owl:Thing ;
     rdfs:comment "Links the assessment to the specific file, network connection, or asset that was checked." .
 
+pact:validatesControl a owl:ObjectProperty ;
+    rdfs:label "Validates Control" ;
+    rdfs:domain pact:ComplianceAssessment ;
+    rdfs:range pact:Control ;
+    rdfs:comment "Links the assessment to the specific control being checked." .
+
 pact:hasVerdict a owl:DatatypeProperty ;
     rdfs:label "Has Verdict" ;
     rdfs:domain pact:ComplianceAssessment ;
     rdfs:range xsd:string ;
     rdfs:comment "The result of the assessment (e.g., 'PASS' or 'FAIL')." .
 
-pact:Benchmark a owl:Class ;
-    rdfs:label "Benchmark" ;
-    rdfs:comment "The standard or policy being checked (e.g., NIST 800-53)." .
+pact:generatedAt a owl:DatatypeProperty ;
+    rdfs:domain pact:ComplianceAssessment ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "Timestamp when the assessment was performed." .
+
+# --- EVIDENCE DEEP-LINKING ---
+pact:evidenceSourceUrl a owl:DatatypeProperty ;
+    rdfs:label "Evidence Source URL" ;
+    rdfs:domain uco-core:UcoObject ;
+    rdfs:range xsd:anyURI ;
+    rdfs:comment "A direct link to the technical proof (e.g., Splunk log link, AWS Config resource link)." .
