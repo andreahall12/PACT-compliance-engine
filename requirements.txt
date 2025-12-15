@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+rdflib
+pyshacl
+openai
+pytest
+httpx
