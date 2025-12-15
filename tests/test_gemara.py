@@ -1,7 +1,13 @@
 import argparse
 import json
-from pact_logic import run_assessment
-from pact_store import db
+import sys
+import os
+
+# Add the project root to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from app.core.engine import run_assessment
+from app.core.store import db
 from rdflib import Namespace
 
 PACT = Namespace("http://your-org.com/ns/pact#")
@@ -25,7 +31,8 @@ def test_gemara_integration():
     
     # 2. Run Assessment using GEMARA Rules
     print("Running PACT Engine with Gemara Rules...")
-    scan_uri, graph_data = run_assessment(events, policy_file="gemara_generated_rules.ttl")
+    # Use the new path for the test rule file
+    scan_uri, graph_data = run_assessment(events, policy_file="data/policies/gemara_generated_rules.ttl")
     
     # 3. Save to Store
     db.add_graph(scan_uri, graph_data)

@@ -11,7 +11,9 @@ UCO_OBS = Namespace("https://ontology.unifiedcyberontology.org/uco/observable/")
 UCO_CORE = Namespace("https://ontology.unifiedcyberontology.org/uco/core/")
 SH = Namespace("http://www.w3.org/ns/shacl#")
 
-def run_assessment(event_stream, system_context_file="system_context.ttl", policy_file="policy_rules.ttl"):
+from app.core.config import SYSTEM_CONTEXT_FILE, POLICY_RULES_FILE
+
+def run_assessment(event_stream, system_context_file=SYSTEM_CONTEXT_FILE, policy_file=POLICY_RULES_FILE):
     """
     Core Logic: Ingests Events -> Maps to RDF -> Validates -> Returns Result Graph
     """

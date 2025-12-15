@@ -27,7 +27,7 @@ if not args.question:
 print(" ... Loading Knowledge Graph (this may take a moment) ...")
 ds = Dataset()
 try:
-    ds.parse("pact_history.trig", format="trig")
+    ds.parse("db/pact_history.trig", format="trig")
 except Exception as e:
     print(f"Error loading graph: {e}")
     sys.exit(1)

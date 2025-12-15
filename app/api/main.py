@@ -6,8 +6,8 @@ import uvicorn
 import json
 import os
 
-from pact_logic import run_assessment
-from pact_store import db
+from app.core.engine import run_assessment
+from app.core.store import db
 
 # OpenAI Setup
 try:
@@ -350,7 +350,7 @@ def stats():
 
 @app.get("/visualize", response_class=HTMLResponse)
 def serve_viz():
-    with open("pact_viz.html", "r") as f:
+    with open("frontend/index.html", "r") as f:
         return f.read()
 
 if __name__ == "__main__":
