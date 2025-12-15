@@ -1,0 +1,22 @@
+@prefix ns1: <https://ontology.unifiedcyberontology.org/uco/core/> .
+@prefix pact: <http://your-org.com/ns/pact#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix uco-obs: <https://ontology.unifiedcyberontology.org/uco/observable/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+[] a pact:ComplianceAssessment ;
+    rdfs:label "Check for evt-002" ;
+    pact:evaluatedEvidence [ a uco-obs:NetworkConnection ;
+            uco-obs:destinationPort 23 ;
+            uco-obs:protocol "tcp" ] ;
+    pact:hasVerdict "FAIL" ;
+    ns1:objectCreatedTime "2025-12-15T14:33:19.203476"^^xsd:dateTime .
+
+[] a pact:ComplianceAssessment ;
+    rdfs:label "Check for evt-001" ;
+    pact:evaluatedEvidence [ a uco-obs:File ;
+            uco-obs:fileName "sensitive_config.yaml" ;
+            uco-obs:owner "root" ] ;
+    pact:hasVerdict "FAIL" ;
+    ns1:objectCreatedTime "2025-12-15T14:33:19.203476"^^xsd:dateTime .
+
