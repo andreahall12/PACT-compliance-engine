@@ -96,3 +96,7 @@ for item in evidence_tracker:
 # 7. Print the Final Graph
 print("\n=== FINAL PACT GRAPH (Multi-Domain) ===")
 print(data_graph.serialize(format='turtle'))
+
+# Save the graph to a file so we can visualize it
+data_graph.serialize(destination='pact_graph.ttl', format='turtle')
+print("✅ Graph saved to 'pact_graph.ttl'")

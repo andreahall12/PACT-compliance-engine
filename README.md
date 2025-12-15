@@ -1,43 +1,23 @@
-# PACT: Policy Automation and Compliance Traceability
+# PACT: Pipeline for Automated Compliance Traceability
 
-## Overview
-PACT is a Semantic Compliance Engine designed to demonstrate how **Operational Reality** (live telemetry) can be validated against **Governance Logic** using machine-readable standards.
+**PACT** is a Proof-of-Concept (PoC) semantic engine that bridges the gap between **Security Operations** (OCSF logs) and **Compliance Governance** (OSCAL/NIST).
 
-Unlike traditional compliance scripts, PACT uses a **Declarative Architecture**:
-* **Data** is lifted into a Knowledge Graph (RDF/Turtle).
-* **Logic** is defined as shapes/constraints (SHACL), not code.
-* **Validation** produces a traceable audit graph.
+Instead of relying on manual checklists, PACT ingests raw security events, maps them to a **Unified Cyber Ontology (UCO)**, and uses **SHACL** shapes to automatically validate them against federal regulations (NIST 800-53).
 
-## Architecture
-This Proof-of-Concept (PoC) aligns with the **UCO (Unified Cyber Ontology)** philosophy:
+---
 
-1.  **Ingest:** Raw logs (simulated OCSF) are converted into RDF triples.
-2.  **Model:** Data is mapped to the `pact_ontology` and `uco-observable` namespaces.
-3.  **Assess:** A SHACL engine (`pyshacl`) validates the data graph against `policy_rules.ttl`.
-4.  **Report:** The engine outputs a standard Validation Report Graph.
+### The Architecture
+PACT demonstrates a "Semantic Compliance" pipeline:
+1.  **Ingest:** Reads raw JSON logs (Files & Network events) in OCSF format.
+2.  **Normalize:** Lifts data into a semantic Knowledge Graph (RDF/Turtle).
+3.  **Assess:** Validates the graph against logic rules (SHACL) derived from NIST controls.
+4.  **Record:** Generates an immutable "Compliance Assessment" artifact.
 
-## How to Run
-1.  Clone the repository.
-2.  Install dependencies: `pip install rdflib pyshacl`
-3.  Run the engine:
-    ```bash
-    python3 pact_engine.py
-    ```
-### Pipeline Workflow 
+### Pipeline Workflow
 ```mermaid
 graph TD
-    A[OCSF Log JSON] -->|Ingest| B(PACT Engine)
+    A[OCSF Log Stream] -->|Ingest| B(PACT Engine)
     C[Policy Rules SHACL] -->|Validate| B
     B -->|Generate| D[Knowledge Graph RDF]
     D -->|Query| E[Auditor Script SPARQL]
-    E -->|Output| F[Compliance Report]
-```
-## Ecosystem Integration 
-ComplyTime: PACT currently exports findings to OSCAL JSON (assessment-results) for direct ingestion into ComplyTime dashboards.
-
-Gemara: Future updates will ingest Gemara-managed OSCAL Profiles to dynamically generate SHACL rules.
-
-## Files
-* `pact_engine.py`: The "Lifter" and execution logic.
-* `policy_rules.ttl`: The SHACL constraints (The "Law").
-* `pact_ontology.ttl`: The Semantic Model (The "Language").
+    E -->|Output| F[Unified Compliance Report]
