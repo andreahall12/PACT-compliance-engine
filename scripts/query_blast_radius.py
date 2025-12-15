@@ -2,7 +2,7 @@ from rdflib import Graph, Namespace
 
 # Load the generated graph
 g = Graph()
-g.parse("pact_graph.ttl", format="turtle")
+g.parse("db/pact_history.trig", format="trig")
 
 PACT = Namespace("http://your-org.com/ns/pact#")
 UCO_OBS = Namespace("https://ontology.unifiedcyberontology.org/uco/observable/")

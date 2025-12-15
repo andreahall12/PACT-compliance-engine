@@ -9,8 +9,10 @@ UCO_OBS = Namespace("https://ontology.unifiedcyberontology.org/uco/observable/")
 UCO_CORE = Namespace("https://ontology.unifiedcyberontology.org/uco/core/")
 SH = Namespace("http://www.w3.org/ns/shacl#")
 
+from app.core.config import DB_FILE, FRAMEWORK_MAPPINGS_FILE, THREAT_MAPPINGS_FILE
+
 class PACTStore:
-    def __init__(self, storage_file='pact_history.trig'):
+    def __init__(self, storage_file=str(DB_FILE)):
         self.storage_file = storage_file
         self.ds = Dataset()
         self.lock = threading.Lock()
@@ -33,8 +35,8 @@ class PACTStore:
         self.ds.bind("sh", SH)
 
         # Load Global Knowledge (Frameworks + Threats)
-        self._load_ttl_if_exists('framework_mappings.ttl')
-        self._load_ttl_if_exists('threat_mappings.ttl')
+        self._load_ttl_if_exists(str(FRAMEWORK_MAPPINGS_FILE))
+        self._load_ttl_if_exists(str(THREAT_MAPPINGS_FILE))
 
     def _load_ttl_if_exists(self, filename):
         if os.path.exists(filename):

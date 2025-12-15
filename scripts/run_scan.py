@@ -43,8 +43,8 @@ data_graph.bind("pact", PACT)
 data_graph.bind("uco-obs", UCO_OBS)
 data_graph.bind("uco-core", UCO_CORE)
 
-# LOAD CONTEXT: System definitions (Global context, adding to this specific graph for validation context)
-data_graph.parse("system_context.ttl", format="turtle")
+# LOAD CONTEXT: System definitions
+data_graph.parse("data/context/system_context.ttl", format="turtle")
 
 # Define Controls (Governance Layer)
 control_ac3 = PACT.Control_AC3
@@ -99,7 +99,7 @@ for event in event_stream:
 
 # 4. Load Policy
 shacl_graph = Graph()
-shacl_graph.parse("policy_rules.ttl", format="turtle")
+shacl_graph.parse("data/policies/policy_rules.ttl", format="turtle")
 
 # 5. Run Assessment
 conforms, results_graph, results_text = validate(
@@ -132,7 +132,7 @@ for item in evidence_tracker:
     # print(f" > {item['id']}: {verdict}")
 
 # 7. Append to History (TriG format)
-history_file = 'pact_history.trig'
+history_file = 'db/pact_history.trig'
 existing_ds = Dataset()
 
 if os.path.exists(history_file):

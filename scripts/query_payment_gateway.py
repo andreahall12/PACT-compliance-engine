@@ -1,6 +1,10 @@
 import argparse
 import sys
-from pact_store import db
+import os
+# Add the project root to sys.path to import app.core.store
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from app.core.store import db
 
 def query_system_failures(system_name):
     print(f"--- Querying Failures for: {system_name} ---")

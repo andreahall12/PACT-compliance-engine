@@ -8,7 +8,7 @@ PACT = Namespace("http://your-org.com/ns/pact#")
 UCO_OBS = Namespace("https://ontology.unifiedcyberontology.org/uco/observable/")
 RDFS = Namespace("http://www.w3.org/2000/01/rdf-schema#")
 
-def generate_oscal_report(graph_file='pact_history.trig', output_file='pact_oscal_results.json'):
+def generate_oscal_report(graph_file='db/pact_history.trig', output_file='pact_oscal_results.json'):
     """
     Exports the PACT Knowledge Graph into a NIST OSCAL Assessment Results (JSON) format.
     This makes the data compatible with FedRAMP / eMASS / ComplyTime tools.

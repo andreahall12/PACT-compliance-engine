@@ -7,7 +7,7 @@ UCO_OBS = Namespace("https://ontology.unifiedcyberontology.org/uco/observable/")
 print("--- PACT Temporal Drift Analysis ---\n")
 
 ds = Dataset()
-ds.parse("pact_history.trig", format="trig")
+ds.parse("db/pact_history.trig", format="trig")
 
 query = """
 PREFIX pact: <http://your-org.com/ns/pact#>
