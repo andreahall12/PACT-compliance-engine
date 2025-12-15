@@ -32,6 +32,10 @@ graph TD
     D -->|Query| E[Auditor Script SPARQL]
     E -->|Output| F[Compliance Report]
 ```
+## Ecosystem Integration 
+ComplyTime: PACT currently exports findings to OSCAL JSON (assessment-results) for direct ingestion into ComplyTime dashboards.
+
+Gemara: Future updates will ingest Gemara-managed OSCAL Profiles to dynamically generate SHACL rules.
 
 ## Files
 * `pact_engine.py`: The "Lifter" and execution logic.
