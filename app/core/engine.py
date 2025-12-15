@@ -75,10 +75,10 @@ def run_assessment(event_stream, system_context_file=SYSTEM_CONTEXT_FILE, policy
     # 3. Validate
     # Support loading external/Gemara rules if present
     shacl_graph = Graph()
-    if "gemara" in policy_file:
+    if "gemara" in str(policy_file):
         print(f"   [Logic] Loading Gemara-compiled rules from {policy_file}...")
     
-    shacl_graph.parse(policy_file, format="turtle")
+    shacl_graph.parse(str(policy_file), format="turtle")
     
     conforms, results_graph, results_text = validate(
         data_graph,
