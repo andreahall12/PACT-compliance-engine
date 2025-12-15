@@ -1,0 +1,17 @@
+{
+    "activity_id": 1,
+    "device": {
+      "hostname": "server-01",
+      "ip": "192.168.1.50"
+    },
+    "file": {
+      "name": "sensitive_config.yaml",
+      "path": "/etc/configs/sensitive_config.yaml"
+    },
+    "message": "File opened by root user",
+    "time": 1678886400,
+    "user": {
+      "name": "admin",
+      "uid": "0"
+    }
+  }
