@@ -13,3 +13,20 @@ pact:NoRootConfigShape
         sh:message "VIOLATION: File is owned by root user." ;
         sh:severity sh:Violation ;
     ] .
+
+# ----------------------------------------------------------------
+# RULE 2: NETWORK SECURITY (NIST CM-7)
+# Requirement: No insecure ports (specifically Port 23 Telnet)
+# ----------------------------------------------------------------
+
+pact:NoTelnetShape
+    a sh:NodeShape ;
+    sh:targetClass uco-obs:NetworkConnection ;
+    sh:message "Non-Compliant: Insecure Telnet Port (23) Detected." ;
+    
+    sh:property [
+        sh:path uco-obs:destinationPort ;
+        sh:not [
+            sh:hasValue 23 ;
+        ] ;
+    ] .

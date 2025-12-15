@@ -1,17 +1,20 @@
-{
-    "activity_id": 1,
-    "device": {
-      "hostname": "server-01",
-      "ip": "192.168.1.50"
-    },
+[
+  {
+    "id": "evt-001",
+    "type": "file_access",
     "file": {
       "name": "sensitive_config.yaml",
       "path": "/etc/configs/sensitive_config.yaml"
     },
-    "message": "File opened by root user",
-    "time": 1678886400,
-    "user": {
-      "name": "admin",
-      "uid": "0"
-    }
+    "user": { "name": "root" }
+  },
+  {
+    "id": "evt-002",
+    "type": "network_connection",
+    "destination": {
+      "ip": "192.168.1.100",
+      "port": 23
+    },
+    "protocol": "tcp"
   }
+]

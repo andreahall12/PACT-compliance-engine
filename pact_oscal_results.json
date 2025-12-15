@@ -1,0 +1,45 @@
+{
+  "assessment-results": {
+    "uuid": "7f2557e1-cc65-416c-8046-53c67b610410",
+    "metadata": {
+      "title": "PACT Automated Compliance Scan",
+      "last-modified": "2025-12-15T13:06:58.834389Z",
+      "version": "1.0.0",
+      "oscal-version": "1.1.2"
+    },
+    "results": [
+      {
+        "uuid": "79905248-c746-45ef-8274-cb3b0b5103bd",
+        "title": "Daily Compliance Run",
+        "observations": [
+          {
+            "uuid": "e7d69898-f112-476d-93f7-b1d4df1b5d81",
+            "title": "Automated Assessment of ac-6",
+            "description": "File 'sensitive_config.yaml' is owned by 'root'",
+            "methods": [
+              "TEST"
+            ],
+            "types": [
+              "finding"
+            ],
+            "subjects": [
+              {
+                "subject-uuid": "d4a63202-9cb2-4d6d-a728-0dcdd27d02ea",
+                "type": "component",
+                "title": "Linux Server Configuration"
+              }
+            ],
+            "relevant-evidence": [
+              {
+                "href": "./raw_event.json",
+                "description": "OCSF Log File from Splunk"
+              }
+            ],
+            "collected": "2025-12-15T13:06:58.834409Z",
+            "observation-status": "not-satisfied"
+          }
+        ]
+      }
+    ]
+  }
+}

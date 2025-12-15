@@ -1,55 +1,52 @@
 from rdflib import Graph, Namespace
-from rdflib.plugins.sparql import prepareQuery
-
-# 1. Load the PACT Graph (The Artifact we created)
-# In a real system, we would load the 'turtle' output from the previous step.
-# Here, we will just re-run the engine logic briefly to get the graph in memory, 
-# or we can load a saved .ttl file. 
-# For this demo, let's just use the engine to get the data live.
-
-import pact_engine # We import your engine to get the graph!
+import pact_engine # Load the live graph from your engine
 
 print("\n\n---------------------------------------------------")
 print("   ACTING AS: INDEPENDENT AUDITOR SYSTEM")
 print("---------------------------------------------------")
 
-# 2. Define the Question (SPARQL Query)
-# We ask: "Find every Assessment that has a Verdict of FAIL, 
-# and tell me which Control and which File caused it."
+# 1. The Smart Query
+# We use the OPTIONAL clause to handle different types of evidence
 query_string = """
     PREFIX pact: <http://your-org.com/ns/pact#>
     PREFIX uco-obs: <https://ontology.unifiedcyberontology.org/uco/observable/>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     
-    SELECT ?control ?verdict ?filename ?owner
+    SELECT ?label ?verdict ?detail
     WHERE {
         ?assessment pact:hasVerdict ?verdict .
-        ?assessment pact:validatesControl ?control .
+        ?assessment rdfs:label ?label .
         ?assessment pact:evaluatedEvidence ?evidence .
         
-        # Get details about the evidence
-        ?evidence uco-obs:fileName ?filename .
-        ?evidence uco-obs:owner ?owner .
-        
-        # Filter: We only care about FAILURES
+        # Filter: We only want FAILURES
         FILTER (?verdict = "FAIL")
+
+        # LOGIC: Extract details depending on what the evidence IS
+        OPTIONAL { 
+            ?evidence uco-obs:fileName ?fname . 
+            ?evidence uco-obs:owner ?owner .
+            BIND(CONCAT("File: ", ?fname, " (Owner: ", ?owner, ")") AS ?detail)
+        }
+        OPTIONAL { 
+            ?evidence uco-obs:destinationPort ?port .
+            BIND(CONCAT("Network: Port ", STR(?port), " Open") AS ?detail)
+        }
     }
 """
 
-# 3. Ask the Question
-g = pact_engine.data_graph # This grabs the graph from your running engine
+# 2. Ask the Question
+g = pact_engine.data_graph
 results = g.query(query_string)
 
-# 4. Print the Management Report
+# 3. Print the Unified Report
 if len(results) == 0:
-    print("✅ AUDIT PASSED: No non-compliant controls found.")
+    print("✅ AUDIT PASSED: All systems compliant.")
 else:
     print("❌ AUDIT FAILED: Non-compliance detected.\n")
-    print(f"{'CONTROL':<35} | {'FILE':<25} | {'OWNER':<10}")
+    print(f"{'ASSESSMENT':<30} | {'DETAILS':<40}")
     print("-" * 75)
     
     for row in results:
-        # Clean up the output to look nice
-        control = str(row.control).replace("https://nvd.nist.gov/800-53/", "")
-        filename = str(row.filename)
-        owner = str(row.owner)
-        print(f"{control:<35} | {filename:<25} | {owner:<10}")
+        label = str(row.label)
+        detail = str(row.detail) if row.detail else "Unknown Evidence Type"
+        print(f"{label:<30} | {detail:<40}")
