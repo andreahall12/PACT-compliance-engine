@@ -1,0 +1,15 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix uco-obs: <https://ontology.unifiedcyberontology.org/uco/observable/> .
+@prefix pact: <http://your-org.com/ns/pact#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# Rule: "Sensitive Config Files Must NOT be owned by Root"
+pact:NoRootConfigShape
+    a sh:NodeShape ;
+    sh:targetClass uco-obs:File ;  # Look at every 'File' object
+    sh:property [
+        sh:path uco-obs:owner ;    # Check the 'owner' property
+        sh:not [ sh:hasValue "root" ] ;   # It MUST NOT be "root"
+        sh:message "VIOLATION: File is owned by root user." ;
+        sh:severity sh:Violation ;
+    ] .

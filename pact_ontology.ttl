@@ -1,0 +1,18 @@
+@prefix pact: <http://your-org.com/ns/pact#> .
+@prefix uco-core: <https://ontology.unifiedcyberontology.org/uco/core/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+
+# 1. Define the Ontology
+pact:Ontology a owl:Ontology ;
+    rdfs:label "PACT: Policy Automation & Compliance Traceability" .
+
+# 2. Define Classes (The Nouns)
+pact:ComplianceAssessment a owl:Class ;
+    rdfs:subClassOf uco-core:Assertion ;
+    rdfs:comment "The result of checking a specific control against evidence." .
+
+# 3. Define Properties (The Verbs)
+pact:hasVerdict a owl:DatatypeProperty ;
+    rdfs:domain pact:ComplianceAssessment ;
+    rdfs:range rdfs:Literal .
