@@ -23,7 +23,7 @@ This Proof-of-Concept (PoC) aligns with the **UCO (Unified Cyber Ontology)** phi
     ```bash
     python3 pact_engine.py
     ```
-### Pipeline Workflow
+### Pipeline Workflow - test 
 ```mermaid
 graph TD
     A[OCSF Log JSON] -->|Ingest| B(PACT Engine)
@@ -31,6 +31,7 @@ graph TD
     B -->|Generate| D[Knowledge Graph RDF]
     D -->|Query| E[Auditor Script SPARQL]
     E -->|Output| F[Compliance Report]
+    ```
 
 ## Files
 * `pact_engine.py`: The "Lifter" and execution logic.
