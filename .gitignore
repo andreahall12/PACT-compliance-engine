@@ -1,0 +1,14 @@
+.env
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+.DS_Store
+db/pact_history.trig
+node_modules/
+dist/
+build/
+*.log
