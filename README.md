@@ -24,7 +24,7 @@ Instead of chasing spreadsheets and screenshots, PACT automatically:
 
 ## 🏗️ Architecture: How It Works
 
-PACT acts as the "Brain" between your Data (Logs) and your Rules (Policy).
+PACT acts as the "Brain" between your Data (Logs) and your Rules (Policy). See the full **[System Architecture Documentation](docs/architecture.md)** for technical diagrams and data flow details.
 
 ```mermaid
 graph TD
@@ -82,7 +82,21 @@ Stop writing Word docs. PACT exports a valid **NIST OSCAL** Assessment Results f
 
 ### Prerequisites
 *   Python 3.10+
-*   (Optional) OpenAI API Key for the Chatbot
+*   **Ollama** (Recommended for Local AI) or OpenAI API Key
+
+### Local AI Setup (Beginner Friendly)
+PACT uses a local AI to help you understand your compliance data without sending your data to the cloud. **You must have Ollama installed and running for the AI Auditor to work.**
+
+1.  **Download Ollama:** Go to [ollama.com](https://ollama.com) and download the app for your computer (available for Mac, Windows, and Linux).
+2.  **Open your Terminal:** 
+    *   **Mac:** Press `Command + Space` and type "Terminal".
+    *   **Windows:** Press the `Start` key and type "PowerShell" or "Command Prompt".
+3.  **Install the Model:** In the terminal window, type exactly this and press Enter:
+    ```bash
+    ollama run granite3.3:8b
+    ```
+    *This will download the AI brain. It may take a few minutes depending on your internet speed.*
+4.  **Keep it Running:** Make sure the Ollama app icon is visible in your menu bar or system tray. PACT talks to this app to generate answers.
 
 ### Installation
 ```bash
@@ -97,12 +111,12 @@ pip install -r requirements.txt
 ### Running the Demo
 1.  **Start the PACT Server:**
     ```bash
-    uvicorn pact_api:app --reload
+    ./venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     ```
 2.  **Open the Dashboard:**
-    Open `pact_viz.html` in your browser.
+    Navigate to [http://localhost:8000/visualize/](http://localhost:8000/visualize/) in your browser.
 3.  **Simulate an Attack:**
-    Click **"Inject Non-Compliant Event"** in the UI to see the graph update in real-time.
+    Click **"Simulate Event"** in the UI to see the graph update in real-time.
 
 ---
 

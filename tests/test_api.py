@@ -11,7 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 # Set up environment variables before importing app
 os.environ["OPENAI_API_KEY"] = "test-key"
 
-from app.api.main import app
+from app.main import app
 from app.core.store import PACTStore
 
 client = TestClient(app)
@@ -34,12 +34,6 @@ def test_root():
     assert response.status_code == 200
     assert response.json() == {"message": "PACT Compliance Engine is Running. Access docs at /docs"}
 
-def test_ingest_events():
-    # We mock run_assessment to avoid complex graph logic and db writes in this unit test
-    # But for an integration test, we might want to let it run.
-    # Let's do a full integration test but with a temporary DB.
-    pass
-
 @pytest.fixture
 def test_db(tmp_path):
     # Create a temporary DB file
@@ -48,12 +42,11 @@ def test_db(tmp_path):
     return store
 
 def test_ingest_flow(test_db):
-    # Patch the global 'db' in app.api.main (which imports it from app.core.store)
-    # We need to patch where it is USED.
-    # app.api.main imports db from app.core.store
-    
-    with patch("app.api.main.db", test_db):
-        response = client.post("/ingest", json=VALID_EVENTS)
+    # Patch the global 'db' in the endpoints
+    with patch("app.api.v1.endpoints.ingest.db", test_db), \
+         patch("app.api.v1.endpoints.compliance.db", test_db):
+        
+        response = client.post("/ingest/", json=VALID_EVENTS)
         if response.status_code != 200:
             print(f"Error Response: {response.json()}")
         assert response.status_code == 200
@@ -69,25 +62,23 @@ def test_ingest_flow(test_db):
         assert stats["total_graphs"] >= 1
 
 def test_blast_radius(test_db):
-    with patch("app.api.main.db", test_db):
-        # First ingest a failure
-        # We need an event that fails.
-        # Based on test_gemara.py, accessing /etc/gemara by root might fail if policies are loaded.
-        # But here we are using default policies?
-        # Let's just check the endpoint returns 200 and a list.
+    with patch("app.api.v1.endpoints.compliance.db", test_db):
         response = client.get("/compliance/blast-radius")
         assert response.status_code == 200
         assert isinstance(response.json(), list)
 
 def test_drift(test_db):
-    with patch("app.api.main.db", test_db):
+    with patch("app.api.v1.endpoints.compliance.db", test_db):
         response = client.get("/compliance/drift")
         assert response.status_code == 200
         assert isinstance(response.json(), list)
 
 def test_threats(test_db):
-    with patch("app.api.main.db", test_db):
+    with patch("app.api.v1.endpoints.compliance.db", test_db):
         response = client.get("/compliance/threats")
         assert response.status_code == 200
         assert isinstance(response.json(), list)
 
+def test_chat_no_question():
+    response = client.post("/chat/", json={})
+    assert response.status_code == 400
