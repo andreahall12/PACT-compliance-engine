@@ -11,7 +11,7 @@ UCO_OBS = Namespace("https://ontology.unifiedcyberontology.org/uco/observable/")
 UCO_CORE = Namespace("https://ontology.unifiedcyberontology.org/uco/core/")
 SH = Namespace("http://www.w3.org/ns/shacl#")
 
-from app.core.config import SYSTEM_CONTEXT_FILE, POLICY_RULES_FILE
+from app.core.config import SYSTEM_CONTEXT_FILE, POLICY_RULES_FILE, CONTROLS_FILE
 
 def run_assessment(event_stream, system_context_file=SYSTEM_CONTEXT_FILE, policy_file=POLICY_RULES_FILE):
     """
@@ -25,19 +25,15 @@ def run_assessment(event_stream, system_context_file=SYSTEM_CONTEXT_FILE, policy
     data_graph.bind("pact", PACT)
     data_graph.bind("uco-obs", UCO_OBS)
     
-    # Load Context
+    # Load Context and Controls
     data_graph.parse(system_context_file, format="turtle")
+    data_graph.parse(str(CONTROLS_FILE), format="turtle")
     
-    # Define Controls
+    # Define Controls Reference (loaded from RDF)
     control_ac3 = PACT.Control_AC3
-    data_graph.add((control_ac3, RDF.type, PACT.Control))
-    data_graph.add((control_ac3, RDFS.label, Literal("NIST AC-3: Access Enforcement")))
-
     control_cm7 = PACT.Control_CM7
-    data_graph.add((control_cm7, RDF.type, PACT.Control))
-    data_graph.add((control_cm7, RDFS.label, Literal("NIST CM-7: Least Functionality")))
 
-    evidence_tracker = [] 
+    evidence_tracker = []
 
     # 2. Map Events to RDF
     for event in event_stream:

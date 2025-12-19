@@ -19,6 +19,7 @@ DB_FILE = DB_DIR / "pact_history.trig"
 # File Paths
 SYSTEM_CONTEXT_FILE = CONTEXT_DIR / "system_context.ttl"
 POLICY_RULES_FILE = POLICIES_DIR / "policy_rules.ttl"
+CONTROLS_FILE = POLICIES_DIR / "controls.ttl"
 FRAMEWORK_MAPPINGS_FILE = MAPPINGS_DIR / "framework_mappings.ttl"
 THREAT_MAPPINGS_FILE = MAPPINGS_DIR / "threat_mappings.ttl"
 PACT_ONTOLOGY_FILE = ONTOLOGY_DIR / "pact_ontology.ttl"
