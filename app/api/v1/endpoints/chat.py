@@ -28,7 +28,7 @@ async def gemara_client():
         return
         
     server_params = StdioServerParameters(
-        command=GEMARA_SERVER_PATH,
+        command=str(GEMARA_SERVER_PATH),
         args=GEMARA_SERVER_ARGS,
         env=None
     )
@@ -67,7 +67,7 @@ def get_compliance_context():
     }
     GROUP BY ?systemName ?processName ?controlName ?verdict ?assetName ?time
     ORDER BY DESC(?time)
-    LIMIT 50
+    LIMIT 25
     """
     results = db.query(query)
     context_data = []
@@ -83,7 +83,7 @@ def get_compliance_context():
         })
     return context_data
 
-@router.post("/")
+@router.post("")
 async def chat_with_auditor(payload: Dict[str, str] = Body(...)):
     question = payload.get("question")
     if not question:
@@ -101,7 +101,7 @@ async def chat_with_auditor(payload: Dict[str, str] = Body(...)):
     SELECT ?vulnName ?controlName ?systemName ?verdict WHERE {
         ?control pact:mitigates ?vuln . ?vuln rdfs:label ?vulnName . ?control rdfs:label ?controlName .
         GRAPH ?g { ?assess pact:validatesControl ?control ; pact:hasVerdict ?verdict ; pact:evaluatedEvidence ?ev . ?system pact:hasComponent ?ev ; rdfs:label ?systemName . }
-    } LIMIT 20
+    } LIMIT 10
     """
     threat_results = db.query(threat_sparql)
     threat_data = []
@@ -132,20 +132,22 @@ async def chat_with_auditor(payload: Dict[str, str] = Body(...)):
     - Be concise and professional.
     """
 
-    # --- MCP Integration (Gemara) ---
-    gemara_tools = []
-    async with gemara_client() as gemara:
-        if gemara:
-            try:
-                tools_list = await gemara.list_tools()
-                gemara_tools = tools_list.tools
-            except Exception as e:
-                print(f"Error listing Gemara tools: {e}")
-
+    # --- AI Provider Routing ---
     if api_key and api_key.startswith("sk-"):
+        # 1. OpenAI MODE (with Gemara Tools)
         if not OpenAI:
             return {"answer": "Error: OpenAI library not installed."}
         
+        # Discover Tools
+        gemara_tools = []
+        async with gemara_client() as gemara:
+            if gemara:
+                try:
+                    tools_list = await gemara.list_tools()
+                    gemara_tools = tools_list.tools
+                except Exception as e:
+                    print(f"Error listing Gemara tools: {e}")
+
         client = OpenAI(api_key=api_key)
         openai_tools = [
             {
@@ -174,13 +176,14 @@ async def chat_with_auditor(payload: Dict[str, str] = Body(...)):
             if response_msg.tool_calls:
                 messages.append(response_msg)
                 async with gemara_client() as gemara:
-                    for tool_call in response_msg.tool_calls:
-                        result = await gemara.call_tool(tool_call.function.name, json.loads(tool_call.function.arguments))
-                        messages.append({
-                            "role": "tool",
-                            "tool_call_id": tool_call.id,
-                            "content": str(result.content)
-                        })
+                    if gemara:
+                        for tool_call in response_msg.tool_calls:
+                            result = await gemara.call_tool(tool_call.function.name, json.loads(tool_call.function.arguments))
+                            messages.append({
+                                "role": "tool",
+                                "tool_call_id": tool_call.id,
+                                "content": str(result.content)
+                            })
                 
                 final_response = client.chat.completions.create(model="gpt-4o", messages=messages)
                 return {"answer": final_response.choices[0].message.content}
@@ -188,8 +191,9 @@ async def chat_with_auditor(payload: Dict[str, str] = Body(...)):
             return {"answer": response_msg.content}
         except Exception as e:
             return {"answer": f"Error calling OpenAI: {str(e)}"}
+            
     else:
-        # Local AI via Ollama (HTTPX)
+        # 2. LOCAL OLLAMA MODE (Direct & Fast)
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
                 ollama_response = await client.post(

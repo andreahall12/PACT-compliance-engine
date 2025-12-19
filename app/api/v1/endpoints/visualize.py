@@ -4,7 +4,7 @@ from app.core.config import BASE_DIR
 
 router = APIRouter()
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("", response_class=HTMLResponse)
 def serve_viz():
     """
     Serves the dashboard UI.
