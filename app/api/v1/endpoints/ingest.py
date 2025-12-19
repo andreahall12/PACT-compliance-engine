@@ -5,7 +5,7 @@ from app.core.store import db
 
 router = APIRouter()
 
-@router.post("/")
+@router.post("")
 def ingest_events(events: List[Dict[str, Any]] = Body(...)):
     """
     Ingest a list of OCSF-like JSON events, run compliance checks, and store the result.
