@@ -472,6 +472,8 @@
             const text = input.value.trim();
             if (!text) return;
 
+            console.log("Sending message:", text);
+
             // Add User Message
             const userMsg = document.createElement('div');
             userMsg.className = 'message msg-user';
@@ -484,6 +486,7 @@
             // Add Loading Indicator
             const loadingMsg = document.createElement('div');
             loadingMsg.className = 'message msg-ai';
+            loadingMsg.id = 'ai-loading-indicator';
             loadingMsg.innerHTML = '<span class="loading-dots">Thinking</span>';
             body.appendChild(loadingMsg);
             body.scrollTop = body.scrollHeight;
@@ -494,16 +497,33 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ question: text })
                 });
-                const data = await res.json();
                 
-                body.removeChild(loadingMsg);
+                const data = await res.json();
+                console.log("Received AI response:", data);
+                
+                // Remove loading
+                const indicator = document.getElementById('ai-loading-indicator');
+                if (indicator) body.removeChild(indicator);
 
                 const aiMsg = document.createElement('div');
                 aiMsg.className = 'message msg-ai';
-                aiMsg.innerHTML = marked.parse(data.answer);
+                
+                if (data && data.answer) {
+                    // Safety check for 'marked' library
+                    if (typeof marked !== 'undefined' && marked.parse) {
+                        aiMsg.innerHTML = marked.parse(data.answer);
+                    } else {
+                        aiMsg.textContent = data.answer;
+                    }
+                } else {
+                    aiMsg.textContent = "Error: Received empty response from server.";
+                    aiMsg.classList.add('text-danger');
+                }
                 body.appendChild(aiMsg);
             } catch (e) {
-                loadingMsg.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle me-2"></i>Error: ${e.message}</span>`;
+                console.error("Chat error:", e);
+                const indicator = document.getElementById('ai-loading-indicator');
+                if (indicator) indicator.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle me-2"></i>Error: ${e.message}</span>`;
             }
             body.scrollTop = body.scrollHeight;
         }

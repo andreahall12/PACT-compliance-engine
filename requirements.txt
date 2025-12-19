@@ -5,3 +5,6 @@ pyshacl
 openai
 pytest
 httpx
+mcp
+ollama
+ollama

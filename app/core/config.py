@@ -26,3 +26,8 @@ PACT_ONTOLOGY_FILE = ONTOLOGY_DIR / "pact_ontology.ttl"
 
 # Ensure DB directory exists
 os.makedirs(DB_DIR, exist_ok=True)
+
+# AI Settings
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434/v1")
+AI_MODEL = os.getenv("AI_MODEL", "granite3.3:8b")
