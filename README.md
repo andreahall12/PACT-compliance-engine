@@ -26,6 +26,23 @@ Instead of chasing spreadsheets and screenshots, PACT automatically:
 
 PACT acts as the "Brain" between your Data (Logs) and your Rules (Policy). See the full **[System Architecture Documentation](docs/architecture.md)** for technical diagrams and data flow details.
 
+---
+
+## 🌐 The Ecosystem: UCO, Gemara, and ComplyTime
+
+PACT doesn't operate in a vacuum. It is built on open standards to ensure interoperability across the cybersecurity industry.
+
+### 1. **UCO (Unified Cyber Ontology)**
+PACT uses **UCO** as its internal language. By mapping raw logs (like Splunk or AWS CloudTrail) into UCO observables, we ensure that a "File" or a "User" is defined the same way regardless of the source. This allows PACT to reason across different vendors and platforms without custom code for every integration.
+
+### 2. **Gemara (Policy Compiler)**
+**Gemara** is the "legal translator" for PACT. While PACT executes the checks, Gemara is used to author and compile high-level regulatory guidance (like NIST SP 800-53) into the technical **SHACL rules** that PACT understands. If Gemara is the *lawmaker*, PACT is the *enforcer*.
+
+### 3. **ComplyTime (Governance Lifecycle)**
+**ComplyTime** provides the broader context for digital trust. PACT feeds ComplyTime with real-time evidence and **NIST OSCAL** reports. While ComplyTime manages the overall compliance posture and risk management lifecycle, PACT provides the ground-truth technical validation that powers it.
+
+---
+
 ```mermaid
 graph TD
     subgraph "1. INPUTS"
