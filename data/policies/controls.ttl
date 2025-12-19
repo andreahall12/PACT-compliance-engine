@@ -1,0 +1,18 @@
+@prefix pact: <http://your-org.com/ns/pact#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+
+# ----------------------------------------------------------------
+# SECURITY CONTROL DEFINITIONS
+# Defines canonical instances of Security Controls (Governance Layer)
+# ----------------------------------------------------------------
+
+pact:Control_AC3 a pact:Control ;
+    rdfs:label "NIST AC-3: Access Enforcement" ;
+    rdfs:comment "Enforce approved authorizations for logical access to information and system resources in accordance with applicable access control policies." .
+
+pact:Control_CM7 a pact:Control ;
+    rdfs:label "NIST CM-7: Least Functionality" ;
+    rdfs:comment "Configure the system to provide only essential capabilities and prohibit or restrict the use of non-essential functions, ports, protocols, and services." .
+
