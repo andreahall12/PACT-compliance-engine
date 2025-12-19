@@ -4,203 +4,346 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PACT Compliance Dashboard</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Simple Markdown Parser -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; padding-bottom: 80px; }
-        header { background-color: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        h1 { margin: 0; }
-        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
-        th { background-color: #34495e; color: white; }
-        tr:hover { background-color: #f1f1f1; }
-        .badge { padding: 5px 10px; border-radius: 4px; font-weight: bold; font-size: 0.8em; }
-        .badge-fail { background-color: #e74c3c; color: white; }
-        .link-btn { text-decoration: none; background-color: #3498db; color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.8em; }
-        .link-btn:hover { background-color: #2980b9; }
 
-        /* Chat Widget Styles */
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar-brand { font-weight: bold; letter-spacing: 0.5px; }
+        .card { border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 24px; border-radius: 12px; }
+        .card-header { background-color: white; border-bottom: 1px solid #eee; font-weight: 600; padding: 1.25rem; border-radius: 12px 12px 0 0 !important; }
+        
+        /* Status Badges */
+        .badge-framework { background-color: #e9ecef; color: #495057; border: 1px solid #ced4da; margin-right: 4px; font-weight: 500; }
+        .badge-framework.primary { background-color: #0d6efd; color: white; border-color: #0d6efd; }
+        
+        /* Tables */
+        .table th { font-weight: 600; font-size: 0.85rem; text-transform: uppercase; color: #6c757d; border-top: none; }
+        .table td { vertical-align: middle; font-size: 0.95rem; }
+        
+        /* Chat Widget */
         #chat-widget {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 350px;
+            bottom: 30px;
+            right: 30px;
+            width: 400px;
+            max-width: 90vw;
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            border: 1px solid #ddd;
-            z-index: 1000;
+            border: 1px solid rgba(0,0,0,0.1);
+            z-index: 1050;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        #chat-widget.minimized {
+            height: 60px;
+            border-radius: 30px;
+            width: 200px;
+            cursor: pointer;
         }
         #chat-header {
-            background-color: #2c3e50;
+            background: linear-gradient(135deg, #2c3e50, #4ca1af);
             color: white;
-            padding: 15px;
-            font-weight: bold;
+            padding: 15px 20px;
+            font-weight: 600;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
+            align-items: center;
         }
         #chat-body {
-            height: 300px;
+            height: 400px;
             overflow-y: auto;
-            padding: 15px;
-            background-color: #f9f9f9;
-            font-size: 0.9em;
+            padding: 20px;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
         #chat-input-area {
-            display: flex;
-            border-top: 1px solid #ddd;
-            padding: 10px;
+            border-top: 1px solid #eee;
+            padding: 15px;
             background: white;
+            display: flex;
+            gap: 10px;
         }
-        #chat-input {
-            flex: 1;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            outline: none;
+        .message { padding: 10px 15px; border-radius: 12px; max-width: 85%; line-height: 1.5; font-size: 0.95rem; }
+        .msg-user { align-self: flex-end; background-color: #0d6efd; color: white; border-bottom-right-radius: 4px; }
+        .msg-ai { align-self: flex-start; background-color: white; border: 1px solid #e9ecef; border-bottom-left-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .msg-ai p:last-child { margin-bottom: 0; }
+        
+        /* Floating Action Button */
+        .fab-ingest {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            z-index: 1040;
         }
-        #chat-send {
-            margin-left: 10px;
-            padding: 8px 15px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+
+        .loading-dots:after {
+            content: ' .';
+            animation: dots 1s steps(5, end) infinite;
         }
-        .message { margin-bottom: 10px; }
-        .msg-user { text-align: right; color: #2c3e50; font-weight: bold; background: #e3f2fd; padding: 8px; border-radius: 8px 8px 0 8px; display: inline-block; max-width: 80%; margin-left: auto; }
-        .msg-ai { text-align: left; background: white; padding: 8px; border-radius: 8px 8px 8px 0; border: 1px solid #eee; display: inline-block; max-width: 90%; }
-        .msg-ai p { margin: 0 0 5px 0; }
-        .msg-ai pre { background: #eee; padding: 5px; overflow-x: auto; border-radius: 4px; }
+        @keyframes dots {
+            0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0);}
+            40% { color: #333; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0);}
+            60% { text-shadow: .25em 0 0 #333, .5em 0 0 rgba(0,0,0,0);}
+            80%, 100% { text-shadow: .25em 0 0 #333, .5em 0 0 #333;}
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>PACT: Compliance Traceability Dashboard</h1>
-            <p>Real-time Blast Radius & Compliance State</p>
-        </header>
 
-        <div class="card">
-            <h2>🚨 Blast Radius: Critical Failures</h2>
-            <p>Showing assets causing compliance failures and their impact on Business Processes.</p>
-            <table id="blastTable">
-                <thead>
-                    <tr>
-                        <th>Time of Failure</th>
-                        <th>Business Process</th>
-                        <th>Impacted System</th>
-                        <th>Control Requirement</th>
-                        <th>Impacted Frameworks</th>
-                        <th>Asset / Evidence</th>
-                        <th>Technical Proof</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    <tr><td colspan="7">Loading data...</td></tr>
-                </tbody>
-            </table>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-shield-alt me-2"></i>PACT Compliance</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link active" href="#"><i class="fas fa-chart-line me-1"></i> Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="loadData()"><i class="fas fa-sync-alt me-1"></i> Refresh</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/docs" target="_blank"><i class="fas fa-book me-1"></i> API Docs</a></li>
+                </ul>
+            </div>
         </div>
+    </nav>
 
-        <div class="card">
-            <h2>📉 Configuration Drift</h2>
-            <p>Assets that were previously compliant but have drifted into non-compliance.</p>
-            <table id="driftTable">
-                <thead>
-                    <tr>
-                        <th>System</th>
-                        <th>Control</th>
-                        <th>Drifted Asset</th>
-                        <th>Last Passed</th>
-                        <th>Failed At</th>
-                        <th>Proof</th>
-                    </tr>
-                </thead>
-                <tbody id="driftBody">
-                    <tr><td colspan="6">Loading drift data...</td></tr>
-                </tbody>
-            </table>
-        </div>
+    <div class="container pb-5">
         
+        <!-- Header Section -->
+        <div class="row mb-4 align-items-center">
+            <div class="col-md-8">
+                <h2 class="fw-bold text-dark">Compliance Posture</h2>
+                <p class="text-muted mb-0">Real-time monitoring of blast radius, configuration drift, and regulatory impact.</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="dropdown d-inline-block">
+                    <button class="btn btn-success dropdown-toggle" type="button" id="ingestDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-bolt me-2"></i>Simulate Event
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="ingestDropdown">
+                        <li><a class="dropdown-item" href="#" onclick="simulateIngest('file_access')">📄 Root File Access (Fail)</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="simulateIngest('network_connection')">🌐 Telnet Connection (Fail)</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI Cards (Placeholder for future stats) -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card bg-white h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="rounded-circle bg-danger bg-opacity-10 p-3 me-3 text-danger">
+                            <i class="fas fa-exclamation-triangle fa-lg"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1">Active Failures</h6>
+                            <h3 class="mb-0 fw-bold" id="kpi-failures">-</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-white h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3 text-warning">
+                            <i class="fas fa-history fa-lg"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1">Drift Detected</h6>
+                            <h3 class="mb-0 fw-bold" id="kpi-drift">-</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+             <div class="col-md-4">
+                <div class="card bg-white h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3 text-info">
+                            <i class="fas fa-shield-virus fa-lg"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1">Threats Mitigated</h6>
+                            <h3 class="mb-0 fw-bold" id="kpi-threats">-</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Blast Radius Table -->
         <div class="card">
-             <h2>🛠 Simulate Ingestion</h2>
-             <p>Send a test event to the API.</p>
-             <button onclick="simulateIngest()" style="padding:10px 20px; cursor:pointer; background:#27ae60; color:white; border:none; border-radius:4px;">Inject Non-Compliant Event</button>
-             <span id="ingestStatus" style="margin-left:10px;"></span>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-bomb me-2 text-danger"></i>Blast Radius: Critical Failures</span>
+                <span class="badge bg-danger">Requires Attention</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="blastTable">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Timestamp</th>
+                                <th>Process / System</th>
+                                <th>Control Requirement</th>
+                                <th>Frameworks</th>
+                                <th>Evidence</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr><td colspan="6" class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration Drift Table -->
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-wind me-2 text-warning"></i>Configuration Drift</span>
+                <small class="text-muted">Regression from compliant state</small>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="driftTable">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">System / Control</th>
+                                <th>Drifted Asset</th>
+                                <th>Timeline</th>
+                                <th>Proof</th>
+                            </tr>
+                        </thead>
+                        <tbody id="driftBody">
+                             <tr><td colspan="4" class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading drift data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Chat Widget -->
     <div id="chat-widget">
         <div id="chat-header" onclick="toggleChat()">
-            <span>🤖 PACT AI Auditor</span>
-            <span>▼</span>
+            <span><i class="fas fa-robot me-2"></i>PACT AI Auditor</span>
+            <i class="fas fa-chevron-down transition-icon"></i>
         </div>
-        <div id="chat-body">
-            <div class="message msg-ai">Hello! I'm your AI Auditor. Ask me about your compliance status.</div>
+        <div id="chat-body" class="collapse show">
+            <div class="message msg-ai">
+                <p><strong>Hello!</strong> 👋 I'm your AI Compliance Auditor.</p>
+                <p>I have access to the full knowledge graph. Ask me about:</p>
+                <ul class="mb-0 ps-3">
+                    <li>Why did the Payment Gateway fail?</li>
+                    <li>Is Log4Shell mitigated?</li>
+                    <li>Show me evidence for AC-3.</li>
+                </ul>
+            </div>
         </div>
-        <div id="chat-input-area">
-            <input type="text" id="chat-input" placeholder="Ask a question..." onkeypress="handleKeyPress(event)">
-            <button id="chat-send" onclick="sendMessage()">Send</button>
+        <div id="chat-input-area" class="collapse show">
+            <input type="text" id="chat-input" class="form-control me-2" placeholder="Ask a question..." onkeypress="handleKeyPress(event)">
+            <button id="chat-send" class="btn btn-primary" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 
+    <!-- Toast Container -->
+    <div class="position-fixed bottom-0 start-0 p-3" style="z-index: 1100">
+        <div id="liveToast" class="toast align-items-center text-white bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="toastMessage">
+                    Action successful.
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
         const API_URL = "http://localhost:8000";
+        const toastEl = document.getElementById('liveToast');
+        const toast = new bootstrap.Toast(toastEl);
+
+        function showToast(message, type = 'primary') {
+            document.getElementById('toastMessage').textContent = message;
+            toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
+            toast.show();
+        }
 
         async function loadData() {
             try {
+                // Load Stats
+                const statsRes = await fetch(`${API_URL}/compliance/stats`);
+                if(statsRes.ok) {
+                    const stats = await statsRes.json();
+                    // Just simple counts for now based on list lengths for kpis
+                }
+
                 // 1. Load Blast Radius
                 const response = await fetch(`${API_URL}/compliance/blast-radius`);
                 const data = await response.json();
                 const tbody = document.getElementById('tableBody');
                 tbody.innerHTML = '';
+                
+                document.getElementById('kpi-failures').textContent = data.length;
 
                 if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7">No active failures detected. System is compliant.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-success"><i class="fas fa-check-circle fa-2x mb-2"></i><br>System Compliant. No critical failures.</td></tr>';
                 } else {
                     data.forEach(row => {
                         const dateObj = new Date(row.timestamp);
                         const timeStr = dateObj.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-                        // Split Control ID from Verbiage (e.g., "NIST AC-3: Access Enforcement")
+                        // Format Control
                         const controlParts = row.control.split(': ');
                         const primaryId = controlParts[0] || row.control;
                         const verbiage = controlParts.length > 1 ? controlParts[1] : row.control;
 
-                        // Combine Primary Framework (NIST) with Mapped Frameworks
+                        // Format Frameworks
                         let frameworks = [primaryId];
                         if (row.impacted_frameworks && row.impacted_frameworks !== 'None') {
                             frameworks = frameworks.concat(row.impacted_frameworks.split(', '));
                         }
-
-                        // Generate Chips
+                        
                         let frameworksHtml = '';
                         frameworks.forEach(fw => {
-                            // Color code the primary framework differently? Maybe just uniform for now.
-                            const style = fw === primaryId 
-                                ? "background:#2c3e50; color:white;" // Primary (NIST) in dark blue
-                                : "background:#eee; color:#333;";      // Mapped in gray
-                            
-                            frameworksHtml += `<span style="${style} padding:2px 6px; border-radius:3px; font-size:0.8em; margin-right:4px; display:inline-block; margin-bottom:2px;">${fw}</span>`;
+                            const isPrimary = fw === primaryId;
+                            frameworksHtml += `<span class="badge badge-framework ${isPrimary ? 'primary' : ''}">${fw}</span>`;
                         });
 
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-                            <td style="color:#666; font-size:0.9em;">${timeStr}</td>
-                            <td><strong>${row.process}</strong></td>
-                            <td>${row.system}</td>
-                            <td>${verbiage}</td>
+                            <td class="ps-4 text-muted small">${timeStr}</td>
+                            <td>
+                                <div class="fw-bold text-dark">${row.process}</div>
+                                <div class="small text-muted"><i class="fas fa-server me-1"></i>${row.system}</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">${primaryId}</span>
+                                <div class="small text-muted mt-1" style="max-width: 300px;">${verbiage}</div>
+                            </td>
                             <td>${frameworksHtml}</td>
-                            <td>${row.asset}</td>
-                            <td><a href="${row.link}" target="_blank" class="link-btn">View Log in Splunk</a></td>
+                            <td><code class="text-danger bg-light px-2 py-1 rounded">${row.asset}</code></td>
+                            <td>
+                                <a href="${row.link}" target="_blank" class="btn btn-sm btn-outline-secondary" title="View in Splunk">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </td>
                         `;
                         tbody.appendChild(tr);
                     });
@@ -211,45 +354,74 @@
                 const driftData = await driftResp.json();
                 const driftBody = document.getElementById('driftBody');
                 driftBody.innerHTML = '';
+                
+                document.getElementById('kpi-drift').textContent = driftData.length;
 
                 if (driftData.length === 0) {
-                    driftBody.innerHTML = '<tr><td colspan="6">No drift detected.</td></tr>';
+                    driftBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No configuration drift detected.</td></tr>';
                 } else {
                     driftData.forEach(row => {
-                        const passDate = new Date(row.previous_pass).toLocaleString('en-US', { month: 'short', day: 'numeric' });
-                        const failDate = new Date(row.current_fail).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        const passDate = new Date(row.previous_pass).toLocaleDateString();
+                        const failDate = new Date(row.current_fail).toLocaleString();
 
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-                            <td><strong>${row.system}</strong></td>
-                            <td>${row.control}</td>
-                            <td style="color:#d35400; font-weight:bold;">${row.asset}</td>
-                            <td style="color:green;">${passDate}</td>
-                            <td style="color:red;">${failDate}</td>
-                            <td><a href="${row.link}" target="_blank" class="link-btn">Proof</a></td>
+                            <td class="ps-4">
+                                <div class="fw-bold">${row.system}</div>
+                                <div class="small text-muted">${row.control}</div>
+                            </td>
+                            <td><code class="text-warning bg-light px-2 py-1 rounded">${row.asset}</code></td>
+                            <td>
+                                <div class="d-flex align-items-center small">
+                                    <span class="text-success me-2">PASSED: ${passDate}</span>
+                                    <i class="fas fa-arrow-right text-muted mx-2"></i>
+                                    <span class="text-danger">FAILED: ${failDate}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <a href="${row.link}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-search"></i> Verify
+                                </a>
+                            </td>
                         `;
                         driftBody.appendChild(tr);
                     });
                 }
+                
+                // 3. Load Threats (Simple Count)
+                const threatResp = await fetch(`${API_URL}/compliance/threats`);
+                if(threatResp.ok) {
+                   const threatData = await threatResp.json();
+                   document.getElementById('kpi-threats').textContent = threatData.length;
+                }
+
 
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('tableBody').innerHTML = '<tr><td colspan="6" style="color:red">Error loading API data. Is the server running?</td></tr>';
+                showToast('Failed to load data from API. Is the server running?', 'danger');
             }
         }
 
-        async function simulateIngest() {
-            const status = document.getElementById('ingestStatus');
-            status.textContent = "Sending...";
+        async function simulateIngest(type) {
+            let event = [];
+            if(type === 'file_access') {
+                event = [{
+                    "id": "sim-root-" + Date.now(),
+                    "type": "file_access",
+                    "file": { "name": "critical_secrets.yaml", "path": "/etc/secrets" },
+                    "user": { "name": "root" }
+                }];
+            } else if (type === 'network_connection') {
+                event = [{
+                    "id": "sim-net-" + Date.now(),
+                    "type": "network_connection",
+                    "destination": { "port": 23, "ip": "192.168.1.100" },
+                    "protocol": "tcp",
+                    "user": { "name": "unknown" }
+                }];
+            }
             
-            const event = [
-              {
-                "id": "sim-event-" + Date.now(),
-                "type": "file_access",
-                "file": { "name": "critical_secrets.yaml", "path": "/etc/secrets" },
-                "user": { "name": "root" }
-              }
-            ];
+            showToast('Ingesting event...', 'info');
 
             try {
                 const res = await fetch(`${API_URL}/ingest`, {
@@ -257,29 +429,35 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(event)
                 });
+                
+                if (!res.ok) throw new Error("API Error");
+                
                 const result = await res.json();
-                status.textContent = "Success! Scan ID: " + result.scan_id;
-                loadData(); // Refresh table
+                showToast(`Event Ingested! ID: ${result.scan_id}`, 'success');
+                
+                // Wait a moment for DB to update then refresh
+                setTimeout(loadData, 500);
             } catch (e) {
-                status.textContent = "Error: " + e.message;
+                showToast("Ingest Failed: " + e.message, 'danger');
             }
         }
 
         // --- Chat Functions ---
         let isChatOpen = true;
         function toggleChat() {
-            const body = document.getElementById('chat-body');
-            const input = document.getElementById('chat-input-area');
-            const headerIcon = document.querySelector('#chat-header span:last-child');
+            const widget = document.getElementById('chat-widget');
+            const icon = document.querySelector('#chat-header .transition-icon');
             
             if (isChatOpen) {
-                body.style.display = 'none';
-                input.style.display = 'none';
-                headerIcon.textContent = '▲';
+                widget.classList.add('minimized');
+                document.getElementById('chat-body').style.display = 'none';
+                document.getElementById('chat-input-area').style.display = 'none';
+                icon.className = 'fas fa-chevron-up transition-icon';
             } else {
-                body.style.display = 'block';
-                input.style.display = 'flex';
-                headerIcon.textContent = '▼';
+                widget.classList.remove('minimized');
+                document.getElementById('chat-body').style.display = 'flex';
+                document.getElementById('chat-input-area').style.display = 'flex';
+                icon.className = 'fas fa-chevron-down transition-icon';
             }
             isChatOpen = !isChatOpen;
         }
@@ -306,8 +484,9 @@
             // Add Loading Indicator
             const loadingMsg = document.createElement('div');
             loadingMsg.className = 'message msg-ai';
-            loadingMsg.textContent = 'Thinking...';
+            loadingMsg.innerHTML = '<span class="loading-dots">Thinking</span>';
             body.appendChild(loadingMsg);
+            body.scrollTop = body.scrollHeight;
 
             try {
                 const res = await fetch(`${API_URL}/chat`, {
@@ -317,23 +496,20 @@
                 });
                 const data = await res.json();
                 
-                // Remove loading
                 body.removeChild(loadingMsg);
 
-                // Add AI Message
                 const aiMsg = document.createElement('div');
                 aiMsg.className = 'message msg-ai';
-                // Render Markdown
                 aiMsg.innerHTML = marked.parse(data.answer);
                 body.appendChild(aiMsg);
             } catch (e) {
-                loadingMsg.textContent = "Error: " + e.message;
+                loadingMsg.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle me-2"></i>Error: ${e.message}</span>`;
             }
             body.scrollTop = body.scrollHeight;
         }
 
         // Load on startup
-        loadData();
+        document.addEventListener('DOMContentLoaded', loadData);
     </script>
 </body>
 </html>
