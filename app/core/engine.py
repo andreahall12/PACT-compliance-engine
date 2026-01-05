@@ -1,6 +1,8 @@
 import json
 import datetime
 import hashlib
+import re
+from urllib.parse import quote_plus
 from rdflib import Graph, Literal, BNode, RDF, Namespace, URIRef
 from rdflib.namespace import XSD, RDFS
 from pyshacl import validate
@@ -13,7 +15,7 @@ SH = Namespace("http://www.w3.org/ns/shacl#")
 
 from app.core.config import SYSTEM_CONTEXT_FILE, POLICY_RULES_FILE, CONTROLS_FILE
 
-def run_assessment(event_stream, system_context_file=SYSTEM_CONTEXT_FILE, policy_file=POLICY_RULES_FILE):
+def run_assessment(event_stream, system_context_file=SYSTEM_CONTEXT_FILE, policy_file=POLICY_RULES_FILE, target_systems=None, target_frameworks=None):
     """
     Core Logic: Ingests Events -> Maps to RDF -> Validates -> Returns Result Graph
     """
@@ -35,18 +37,40 @@ def run_assessment(event_stream, system_context_file=SYSTEM_CONTEXT_FILE, policy
 
     evidence_tracker = []
 
+    # Map target frameworks to controls (simplified for now)
+    # In a real scenario, this would be a SPARQL lookup
+    control_map = {
+        "NIST AC-3": control_ac3,
+        "NIST CM-7": control_cm7
+    }
+
     # 2. Map Events to RDF
     for event in event_stream:
+        # Filtering by System
+        event_system = event.get("system", "Unknown")
+        if target_systems and event_system not in target_systems:
+            continue
+
         # Stable ID
         event_id = event.get("id")
         if not event_id:
             event_hash = hashlib.sha256(json.dumps(event, sort_keys=True).encode()).hexdigest()
             event_id = f"hash-{event_hash[:8]}"
+
+        # Normalize IDs used inside URIs (avoid invalid IRIs / injection-y characters)
+        # Keep original `event_id` for display/deeplinks, but use a safe slug for the RDF URI path.
+        safe_event_id = event_id
+        if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", str(event_id)):
+            event_hash = hashlib.sha256(str(event_id).encode()).hexdigest()
+            safe_event_id = f"hash-{event_hash[:16]}"
             
-        evidence_uri = PACT[f"evidence/{event_id}"]
+        evidence_uri = PACT[f"evidence/{safe_event_id}"]
         evidence_node = URIRef(evidence_uri)
         
-        deep_link = f"https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3D{event_id}"
+        deep_link = (
+            "https://splunk.your-org.com/en-US/app/search/search?q="
+            + quote_plus(f"search id={event_id}")
+        )
 
         evidence_tracker.append({
             "node": evidence_node,
@@ -86,16 +110,32 @@ def run_assessment(event_stream, system_context_file=SYSTEM_CONTEXT_FILE, policy
 
     # 4. Generate Assessment Records
     for item in evidence_tracker:
+        target_control = None
+        if item['type'] == 'file_access':
+            target_control = control_ac3
+        elif item['type'] == 'network_connection':
+            target_control = control_cm7
+
+        # Filtering by Framework
+        if target_frameworks:
+            # Check if this control's label matches one of the targeted frameworks
+            # (In a more robust version, we would use the URI or a mapping table)
+            is_targeted = False
+            for tf in target_frameworks:
+                if tf in ["NIST AC-3", "Access Enforcement"] and target_control == control_ac3:
+                    is_targeted = True
+                if tf in ["NIST CM-7", "Least Functionality"] and target_control == control_cm7:
+                    is_targeted = True
+            
+            if not is_targeted:
+                continue
+
         assessment_node = BNode()
         data_graph.add((assessment_node, RDF.type, PACT.ComplianceAssessment))
         data_graph.add((assessment_node, RDFS.label, Literal(f"Check for {item['id']}")))
         data_graph.add((assessment_node, PACT.generatedAt, Literal(timestamp, datatype=XSD.dateTime)))
         data_graph.add((assessment_node, PACT.evaluatedEvidence, item['node']))
-        
-        if item['type'] == 'file_access':
-            data_graph.add((assessment_node, PACT.validatesControl, control_ac3))
-        elif item['type'] == 'network_connection':
-            data_graph.add((assessment_node, PACT.validatesControl, control_cm7))
+        data_graph.add((assessment_node, PACT.validatesControl, target_control))
 
         is_failure = (None, SH.focusNode, item['node']) in results_graph
         verdict = "FAIL" if is_failure else "PASS"

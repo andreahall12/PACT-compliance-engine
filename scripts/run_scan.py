@@ -3,6 +3,7 @@ import datetime
 import argparse
 import os
 import hashlib
+from urllib.parse import quote_plus
 from rdflib import Graph, Literal, BNode, RDF, Namespace, Dataset, URIRef
 from rdflib.namespace import XSD, RDFS
 from pyshacl import validate
@@ -73,7 +74,10 @@ for event in event_stream:
     # --- DEEP LINK GENERATION ---
     # Simulating a link to a log aggregation system (e.g. Splunk)
     # In reality, this would be constructed from your SIEM's deep-link format
-    deep_link = f"https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3D{event_id}"
+    deep_link = (
+        "https://splunk.your-org.com/en-US/app/search/search?q="
+        + quote_plus(f"search id={event_id}")
+    )
 
     evidence_tracker.append({
         "node": evidence_node,
