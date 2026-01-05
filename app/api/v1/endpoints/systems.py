@@ -248,11 +248,17 @@ async def get_system(
     current_user: User = Depends(require_permission("systems.read")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get a specific system by ID."""
+    """Get a specific system by ID (supports both numeric DB id and string system_id)."""
+    # Support both numeric DB ID and string system_id
+    if system_id.isdigit():
+        # Numeric ID - look up by database primary key
+        query = select(System).where(System.id == int(system_id), System.deleted_at.is_(None))
+    else:
+        # String ID - look up by system_id field
+        query = select(System).where(System.system_id == system_id, System.deleted_at.is_(None))
+    
     result = await db.execute(
-        select(System)
-        .where(System.system_id == system_id, System.deleted_at.is_(None))
-        .options(
+        query.options(
             selectinload(System.owner_team),
             selectinload(System.owner_user),
             selectinload(System.business_processes),
