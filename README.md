@@ -11,52 +11,101 @@ Instead of chasing spreadsheets and screenshots, PACT automatically:
 
 ---
 
-## 🎯 The Problem vs. The Solution
+## Quick Start (Test Mode)
+
+### Test Credentials
+
+For testing and demonstration purposes, the following accounts are pre-configured:
+
+| Role | Email | Password |
+|------|-------|----------|
+| **Admin** | `admin@pact.io` | `admin123` |
+| **Compliance Officer** | `compliance.officer@pact.io` | `compliance123` |
+| **Security Engineer** | `security@pact.io` | `Security@123!` |
+| **Developer** | `developer@pact.io` | `Developer@123!` |
+| **System Owner** | `sysowner@pact.io` | `SysOwner@123!` |
+| **CISO** | `ciso@pact.io` | `ChiefSec@123!` |
+| **Internal Auditor** | `auditor@pact.io` | `Auditor@123!` |
+| **External Auditor** | `external@pact.io` | `External@123!` |
+| **Product Manager** | `pm@pact.io` | `ProductMgr@123!` |
+
+> **Warning:** These are TEST credentials only. In production, use the bootstrap endpoint to create your first admin user with a strong password.
+
+---
+
+## New in Version 2.0
+
+### Role-Based Access Control (RBAC)
+
+PACT now supports 9 distinct user roles with granular permissions:
+
+- **Admin** - Full system access, user management, configuration
+- **Compliance Officer** - Policy management, framework configuration, full compliance view
+- **Security Engineer** - Technical remediation, vulnerability tracking, system configuration
+- **Developer** - Code-related compliance issues, CI/CD integration
+- **System Owner** - Manage owned systems, view compliance status
+- **CISO** - Executive dashboards, risk overview, audit preparation
+- **Internal Auditor** - Read-only access to all compliance data, evidence review
+- **External Auditor** - Limited read-only access for third-party audits
+- **Product Manager** - Product compliance status, release gates
+
+### System Lifecycle Management
+
+Track systems through their entire lifecycle:
+- **Planned** → **Active** → **Deprecated** → **Archived**
+- Assign ownership, backup owners, and team responsibilities
+- Link systems to business processes and products
+
+### Document & Evidence Management
+
+- Upload policy documents, procedures, and manual evidence
+- Version control for compliance documentation
+- Expiration alerts for documents requiring periodic review
+- Auditor evidence request workflows
+
+### Historical "Time Machine"
+
+- View compliance state at any point in time
+- Compare compliance between two dates
+- Track drift and remediation over time
+
+### Incident Correlation
+
+- Link security incidents to compliance gaps
+- Track near-misses and their relationship to controls
+- Measure control effectiveness over time
+
+---
+
+## The Problem vs. The Solution
 
 | The Old Way (Manual Compliance) | The PACT Way (Semantic Compliance) |
 | :--- | :--- |
-| ❌ **Snapshot in Time:** "It was secure last month." | ✅ **Continuous:** "It became insecure 5 minutes ago." |
-| ❌ **Spreadsheets:** Manual data entry & errors. | ✅ **Knowledge Graph:** Auto-generated relationships. |
-| ❌ **Siloed:** Compliance doesn't know about Engineering. | ✅ **Unified:** Maps `Failed Control` $\to$ `Git Commit`. |
-| ❌ **Opaque:** "Why did we fail?" | ✅ **Traceable:** "We failed because of *this* log file." |
+| **Snapshot in Time:** "It was secure last month." | **Continuous:** "It became insecure 5 minutes ago." |
+| **Spreadsheets:** Manual data entry & errors. | **Knowledge Graph:** Auto-generated relationships. |
+| **Siloed:** Compliance doesn't know about Engineering. | **Unified:** Maps `Failed Control` → `Git Commit`. |
+| **Opaque:** "Why did we fail?" | **Traceable:** "We failed because of *this* log file." |
 
 ---
 
-## 🏗️ Architecture: How It Works
+## Architecture: How It Works
 
 PACT acts as the "Brain" between your Data (Logs) and your Rules (Policy). See the full **[System Architecture Documentation](docs/architecture.md)** for technical diagrams and data flow details.
 
----
-
-## 🌐 The Ecosystem: UCO, Gemara, and ComplyTime
-
-PACT doesn't operate in a vacuum. It is built on open standards to ensure interoperability across the cybersecurity industry.
-
-### 1. **UCO (Unified Cyber Ontology)**
-PACT uses **UCO** as its internal language. By mapping raw logs (like Splunk or AWS CloudTrail) into UCO observables, we ensure that a "File" or a "User" is defined the same way regardless of the source. This allows PACT to reason across different vendors and platforms without custom code for every integration.
-
-### 2. **Gemara (Policy Compiler)**
-**Gemara** is the "legal translator" for PACT. While PACT executes the checks, Gemara is used to author and compile high-level regulatory guidance (like NIST SP 800-53) into the technical **SHACL rules** that PACT understands. If Gemara is the *lawmaker*, PACT is the *enforcer*.
-
-### 3. **ComplyTime (Governance Lifecycle)**
-**ComplyTime** provides the broader context for digital trust. PACT feeds ComplyTime with real-time evidence and **NIST OSCAL** reports. While ComplyTime manages the overall compliance posture and risk management lifecycle, PACT provides the ground-truth technical validation that powers it.
-
----
-
 ```mermaid
 graph TD
-    subgraph "1. INPUTS"
+    subgraph inputs [1. INPUTS]
     A[Logs / Splunk] -->|Ingest| E(PACT Engine)
     B[Policy / Gemara] -->|Rules| E
     end
 
-    subgraph "2. THE ENGINE"
+    subgraph engine [2. THE ENGINE]
     E -->|Build| G{Knowledge Graph}
     G -->|Link| H[Evidence]
     G -->|Map| I[Business Process]
     end
 
-    subgraph "3. OUTPUTS"
+    subgraph outputs [3. OUTPUTS]
     G -->|Visualizes| J[Real-Time Dashboard]
     G -->|Explains| K[AI Auditor Chatbot]
     G -->|Reports| L[NIST OSCAL JSON]
@@ -72,7 +121,22 @@ graph TD
 
 ---
 
-## 🚀 Key Features
+## The Ecosystem: UCO, Gemara, and ComplyTime
+
+PACT doesn't operate in a vacuum. It is built on open standards to ensure interoperability across the cybersecurity industry.
+
+### 1. UCO (Unified Cyber Ontology)
+PACT uses **UCO** as its internal language. By mapping raw logs (like Splunk or AWS CloudTrail) into UCO observables, we ensure that a "File" or a "User" is defined the same way regardless of the source.
+
+### 2. Gemara (Policy Compiler)
+**Gemara** is the "legal translator" for PACT. While PACT executes the checks, Gemara is used to author and compile high-level regulatory guidance (like NIST SP 800-53) into the technical **SHACL rules** that PACT understands.
+
+### 3. ComplyTime (Governance Lifecycle)
+**ComplyTime** provides the broader context for digital trust. PACT feeds ComplyTime with real-time evidence and **NIST OSCAL** reports.
+
+---
+
+## Key Features
 
 ### 1. Blast Radius Analysis
 Don't just fix a server; save a business process. PACT links low-level technical failures to high-level business impact.
@@ -84,7 +148,7 @@ Systems rot over time. PACT catches "Configuration Drift" by comparing today's g
 
 > *"Alert: `sensitive_config.yaml` passed checks for 90 days but was changed by `root` at 3:45 PM today."*
 
-### 3. AI Auditor 🤖
+### 3. AI Auditor
 Ask plain English questions to your compliance data.
 
 *   **User:** *"Why is the HR Portal failing?"*
@@ -95,25 +159,21 @@ Stop writing Word docs. PACT exports a valid **NIST OSCAL** Assessment Results f
 
 ---
 
-## 🛠️ Getting Started
+## Getting Started
 
 ### Prerequisites
 *   Python 3.10+
 *   **Ollama** (Recommended for Local AI) or OpenAI API Key
 
 ### Local AI Setup (Beginner Friendly)
-PACT uses a local AI to help you understand your compliance data without sending your data to the cloud. **You must have Ollama installed and running for the AI Auditor to work.**
+PACT uses a local AI to help you understand your compliance data without sending your data to the cloud.
 
-1.  **Download Ollama:** Go to [ollama.com](https://ollama.com) and download the app for your computer (available for Mac, Windows, and Linux).
-2.  **Open your Terminal:** 
-    *   **Mac:** Press `Command + Space` and type "Terminal".
-    *   **Windows:** Press the `Start` key and type "PowerShell" or "Command Prompt".
-3.  **Install the Model:** In the terminal window, type exactly this and press Enter:
+1.  **Download Ollama:** Go to [ollama.com](https://ollama.com) and download the app.
+2.  **Install the Model:**
     ```bash
     ollama run granite3.3:8b
     ```
-    *This will download the AI brain. It may take a few minutes depending on your internet speed.*
-4.  **Keep it Running:** Make sure the Ollama app icon is visible in your menu bar or system tray. PACT talks to this app to generate answers.
+3.  **Keep it Running:** Make sure the Ollama app is running in your menu bar.
 
 ### Installation
 ```bash
@@ -121,29 +181,70 @@ PACT uses a local AI to help you understand your compliance data without sending
 git clone https://github.com/your-org/pact.git
 cd pact
 
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
 # Install dependencies
 pip install -r requirements.txt
 ```
 
-### Running the Demo
-1.  **Start the PACT Server:**
-    ```bash
-    ./venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    ```
-2.  **Open the Dashboard:**
-    Navigate to [http://localhost:8000/visualize/](http://localhost:8000/visualize/) in your browser.
-3.  **Simulate an Attack:**
-    Click **"Simulate Event"** in the UI to see the graph update in real-time.
+### Running the Server
+```bash
+# Start the PACT Server
+./venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload
+```
+
+### First-Time Setup (Bootstrap)
+
+If this is a fresh installation with no users, bootstrap the first admin:
+
+```bash
+curl -X POST http://localhost:8002/v1/auth/bootstrap \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@yourcompany.com",
+    "password": "YourSecurePassword123!",
+    "full_name": "System Administrator",
+    "role": "admin"
+  }'
+```
+
+### Access the Dashboard
+
+1. Navigate to [http://localhost:8002/visualize](http://localhost:8002/visualize)
+2. Log in with your credentials (or use test credentials above)
+3. Explore the dashboard based on your role
 
 ---
 
-## 🔗 Integrations
+## API Reference
+
+PACT exposes a RESTful API at `/v1/`. Key endpoints:
+
+| Category | Endpoints | Description |
+|----------|-----------|-------------|
+| **Authentication** | `POST /v1/auth/login`, `/register`, `/bootstrap` | User authentication and registration |
+| **Users** | `GET/POST/PATCH/DELETE /v1/users` | User management (Admin only) |
+| **Systems** | `GET/POST/PATCH/DELETE /v1/systems` | System lifecycle management |
+| **Documents** | `GET/POST /v1/documents` | Evidence and document management |
+| **Compliance** | `GET /v1/compliance/blast-radius`, `/drift`, `/stats` | Compliance data and analysis |
+| **History** | `GET /v1/history/at`, `/timeline`, `/compare` | Historical compliance views |
+| **Chat** | `POST /v1/chat` | AI Auditor queries |
+| **Ingest** | `POST /v1/ingest` | Ingest security events |
+
+Full API documentation available at [http://localhost:8002/docs](http://localhost:8002/docs)
+
+---
+
+## Integrations
 
 *   **Gemara:** We natively consume SHACL rules compiled by the Gemara Policy Compiler.
 *   **ComplyTime:** We export results that fit into the ComplyTime lifecycle.
 *   **Splunk / OCSF:** We ingest standard JSON security logs.
+*   **CI/CD:** API-first design enables integration with GitHub Actions, GitLab CI, etc.
 
 ---
 
-## 📜 License
+## License
 MIT License. Open Source and ready for the community.

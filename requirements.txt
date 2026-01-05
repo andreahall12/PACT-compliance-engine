@@ -1,10 +1,56 @@
-fastapi
-uvicorn
-rdflib
-pyshacl
-openai
-pytest
-httpx
-mcp
-ollama
-ollama
+# PACT - Policy Automation and Compliance Traceability
+# Requirements with pinned versions for security and reproducibility
+
+# Web Framework
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.9
+
+# Database & ORM
+sqlalchemy==2.0.35
+alembic==1.13.2
+aiosqlite==0.20.0
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+argon2-cffi==23.1.0
+pydantic[email]==2.9.2
+pydantic-settings==2.5.2
+
+# Knowledge Graph
+rdflib==7.0.0
+pyshacl==0.25.0
+
+# AI Integration
+openai==1.51.0
+ollama==0.3.3
+mcp==1.1.2
+
+# HTTP Client
+httpx==0.27.2
+
+# File Handling
+python-magic==0.4.27
+aiofiles==24.1.0
+
+# Testing
+pytest==8.3.3
+pytest-asyncio==0.24.0
+pytest-cov==5.0.0
+
+# Security Scanning (dev)
+bandit==1.7.10
+safety==3.2.8
+
+# Rate Limiting
+slowapi==0.1.9
+
+# Logging
+structlog==24.4.0
+
+# Async SQLAlchemy support
+greenlet==3.1.1
+
+# Email validation
+email-validator==2.2.0
