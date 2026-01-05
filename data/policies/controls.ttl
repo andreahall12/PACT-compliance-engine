@@ -16,3 +16,5 @@ pact:Control_CM7 a pact:Control ;
     rdfs:label "NIST CM-7: Least Functionality" ;
     rdfs:comment "Configure the system to provide only essential capabilities and prohibit or restrict the use of non-essential functions, ports, protocols, and services." .
 
+
+

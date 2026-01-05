@@ -172,3 +172,5 @@ def check_threat_mitigation(vulnerability: str = None):
 def stats():
     return db.get_stats()
 
+
+
