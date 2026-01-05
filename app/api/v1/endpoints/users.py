@@ -79,9 +79,16 @@ async def list_users(
     result = await db.execute(count_query)
     total = result.scalar()
     
-    # Apply pagination
+    # Apply pagination and eager load teams relationship
+    from sqlalchemy.orm import selectinload
     offset = (page - 1) * per_page
-    query = query.offset(offset).limit(per_page).order_by(User.created_at.desc())
+    query = (
+        query
+        .options(selectinload(User.teams))
+        .offset(offset)
+        .limit(per_page)
+        .order_by(User.created_at.desc())
+    )
     
     result = await db.execute(query)
     users = result.scalars().all()
@@ -178,7 +185,13 @@ async def create_user(
     db.add(audit)
     
     await db.commit()
-    await db.refresh(user)
+    
+    # Re-query with eager loading to avoid lazy load issues
+    from sqlalchemy.orm import selectinload
+    result = await db.execute(
+        select(User).where(User.id == user.id).options(selectinload(User.teams))
+    )
+    user = result.scalar_one()
     
     # TODO: Send welcome email with temp_password if send_welcome_email is True
     
@@ -206,8 +219,11 @@ async def get_user(
     
     Requires: users.read permission
     """
+    from sqlalchemy.orm import selectinload
     result = await db.execute(
-        select(User).where(User.id == user_id, User.deleted_at.is_(None))
+        select(User)
+        .where(User.id == user_id, User.deleted_at.is_(None))
+        .options(selectinload(User.teams))
     )
     user = result.scalar_one_or_none()
     
@@ -324,7 +340,13 @@ async def update_user(
     db.add(audit)
     
     await db.commit()
-    await db.refresh(user)
+    
+    # Re-query with eager loading to avoid lazy load issues
+    from sqlalchemy.orm import selectinload
+    result = await db.execute(
+        select(User).where(User.id == user.id).options(selectinload(User.teams))
+    )
+    user = result.scalar_one()
     
     return UserResponse(
         id=user.id,
