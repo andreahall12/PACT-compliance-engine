@@ -8,3 +8,5 @@ api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
 api_router.include_router(ingest.router, prefix="/ingest", tags=["ingest"])
 api_router.include_router(visualize.router, prefix="/visualize", tags=["visualization"])
 
+
+
