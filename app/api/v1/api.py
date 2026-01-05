@@ -14,6 +14,8 @@ from app.api.v1.endpoints import (
     users,
     systems,
     documents,
+    incidents,
+    history,
 )
 
 api_router = APIRouter()
@@ -65,4 +67,18 @@ api_router.include_router(
     ingest.router,
     prefix="/ingest",
     tags=["ingest"]
+)
+
+# Incident management
+api_router.include_router(
+    incidents.router,
+    prefix="/incidents",
+    tags=["incidents"]
+)
+
+# Historical view / time machine
+api_router.include_router(
+    history.router,
+    prefix="/history",
+    tags=["history"]
 )
