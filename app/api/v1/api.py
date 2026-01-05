@@ -13,6 +13,7 @@ from app.api.v1.endpoints import (
     ingest,
     users,
     systems,
+    documents,
 )
 
 api_router = APIRouter()
@@ -36,6 +37,13 @@ api_router.include_router(
     systems.router,
     prefix="/systems",
     tags=["systems"]
+)
+
+# Document management
+api_router.include_router(
+    documents.router,
+    prefix="/documents",
+    tags=["documents"]
 )
 
 # Compliance data (blast radius, drift, threats)
