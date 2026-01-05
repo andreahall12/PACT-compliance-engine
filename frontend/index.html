@@ -3,316 +3,1656 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PACT Compliance Dashboard</title>
+    <title>PACT - Policy Automation and Compliance Traceability</title>
     
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome for Icons -->
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Simple Markdown Parser -->
+    
+    <!-- Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- HTML Sanitizer (for LLM/Markdown output) -->
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
 
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .navbar-brand { font-weight: bold; letter-spacing: 0.5px; }
-        .card { border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 24px; border-radius: 12px; }
-        .card-header { background-color: white; border-bottom: 1px solid #eee; font-weight: 600; padding: 1.25rem; border-radius: 12px 12px 0 0 !important; }
+        :root {
+            /* Cyber-industrial palette */
+            --bg-dark: #0a0e14;
+            --bg-card: #131922;
+            --bg-elevated: #1a2130;
+            --border: #2a3544;
+            --text-primary: #e6edf3;
+            --text-secondary: #7d8590;
+            --accent-cyan: #39d0d8;
+            --accent-orange: #ff8f3e;
+            --accent-pink: #e85d75;
+            --accent-green: #3fb950;
+            --accent-yellow: #f0b429;
+            --accent-purple: #a371f7;
+            --danger: #f85149;
+            --warning: #f0b429;
+            --success: #3fb950;
+            --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         
-        /* Status Badges */
-        .badge-framework { background-color: #e9ecef; color: #495057; border: 1px solid #ced4da; margin-right: 4px; font-weight: 500; }
-        .badge-framework.primary { background-color: #0d6efd; color: white; border-color: #0d6efd; }
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Layout */
+        .app-container { display: flex; flex: 1; }
         
+        .sidebar {
+            width: 260px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+        
+        .content-area {
+            flex: 1;
+            padding: 28px;
+            overflow-y: auto;
+        }
+
+        /* Logo */
+        .logo {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+        }
+        
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Navigation */
+        .nav-section {
+            padding: 20px 0;
+            flex: 1;
+        }
+        
+        .nav-label {
+            padding: 8px 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .nav-item:hover { 
+            background: rgba(57, 208, 216, 0.08);
+            color: var(--text-primary);
+        }
+        
+        .nav-item.active {
+            background: rgba(57, 208, 216, 0.12);
+            color: var(--accent-cyan);
+            border-left: 3px solid var(--accent-cyan);
+        }
+        
+        .nav-item i { width: 20px; text-align: center; }
+        
+        .nav-badge {
+            margin-left: auto;
+            background: var(--danger);
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        /* User Profile */
+        .user-profile {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .user-info { flex: 1; min-width: 0; }
+        
+        .user-name {
+            font-weight: 600;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .user-role {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: capitalize;
+        }
+        
+        .logout-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px;
+            transition: color 0.15s;
+        }
+        
+        .logout-btn:hover { color: var(--danger); }
+
+        /* Header */
+        .header {
+            padding: 20px 28px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-card);
+        }
+        
+        .header-title { font-size: 22px; font-weight: 600; }
+        
+        .header-actions { display: flex; gap: 12px; }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+        }
+        
+        .card-body { padding: 20px; }
+
+        /* KPI Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .kpi-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .kpi-icon.danger { background: rgba(248, 81, 73, 0.15); color: var(--danger); }
+        .kpi-icon.warning { background: rgba(240, 180, 41, 0.15); color: var(--warning); }
+        .kpi-icon.success { background: rgba(63, 185, 80, 0.15); color: var(--success); }
+        .kpi-icon.info { background: rgba(57, 208, 216, 0.15); color: var(--accent-cyan); }
+        
+        .kpi-label { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+        .kpi-value { font-size: 28px; font-weight: 700; font-family: var(--font-mono); }
+
         /* Tables */
-        .table th { font-weight: 600; font-size: 0.85rem; text-transform: uppercase; color: #6c757d; border-top: none; }
-        .table td { vertical-align: middle; font-size: 0.95rem; }
+        .table-container { overflow-x: auto; }
         
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        thead th {
+            text-align: left;
+            padding: 12px 16px;
+            background: var(--bg-elevated);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        tbody td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        
+        tbody tr:hover { background: rgba(255,255,255,0.02); }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-badge.fail { background: rgba(248, 81, 73, 0.15); color: var(--danger); }
+        .status-badge.pass { background: rgba(63, 185, 80, 0.15); color: var(--success); }
+        .status-badge.warn { background: rgba(240, 180, 41, 0.15); color: var(--warning); }
+        .status-badge.info { background: rgba(57, 208, 216, 0.15); color: var(--accent-cyan); }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+        
+        .btn-primary {
+            background: var(--accent-cyan);
+            color: var(--bg-dark);
+        }
+        
+        .btn-primary:hover { 
+            background: #5dd8df;
+            box-shadow: 0 4px 16px rgba(57, 208, 216, 0.3);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--bg-elevated);
+            border-color: var(--text-secondary);
+        }
+        
+        .btn-danger {
+            background: rgba(248, 81, 73, 0.15);
+            color: var(--danger);
+        }
+        
+        .btn-danger:hover { background: rgba(248, 81, 73, 0.25); }
+        
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
+
+        /* Form Elements */
+        .form-group { margin-bottom: 20px; }
+        
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.15s;
+        }
+        
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 3px rgba(57, 208, 216, 0.15);
+        }
+        
+        .form-input::placeholder { color: var(--text-secondary); }
+
+        /* Login Page */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: 
+                radial-gradient(ellipse at 20% 80%, rgba(57, 208, 216, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(163, 113, 247, 0.08) 0%, transparent 50%),
+                var(--bg-dark);
+        }
+        
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        
+        .login-logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .login-logo-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        
+        .login-title {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .login-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 8px;
+        }
+        
+        .login-error {
+            background: rgba(248, 81, 73, 0.15);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+            color: var(--danger);
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .login-error.show { display: block; }
+
         /* Chat Widget */
         #chat-widget {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 400px;
-            max-width: 90vw;
-            background: white;
+            bottom: 24px;
+            right: 24px;
+            width: 380px;
+            max-height: 500px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
             border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-            border: 1px solid rgba(0,0,0,0.1);
-            z-index: 1050;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 1000;
+            transition: all 0.3s ease;
         }
+        
         #chat-widget.minimized {
-            height: 60px;
-            border-radius: 30px;
-            width: 200px;
+            max-height: 56px;
+            width: 180px;
             cursor: pointer;
         }
+        
         #chat-header {
-            background: linear-gradient(135deg, #2c3e50, #4ca1af);
-            color: white;
-            padding: 15px 20px;
-            font-weight: 600;
-            cursor: pointer;
+            padding: 14px 18px;
+            background: linear-gradient(135deg, var(--bg-elevated), var(--bg-card));
+            border-bottom: 1px solid var(--border);
+            border-radius: 16px 16px 0 0;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
         }
+        
+        #chat-header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+        
         #chat-body {
-            height: 400px;
+            flex: 1;
+            padding: 16px;
             overflow-y: auto;
-            padding: 20px;
-            background-color: #f8f9fa;
             display: flex;
             flex-direction: column;
             gap: 12px;
+            max-height: 340px;
         }
-        #chat-input-area {
-            border-top: 1px solid #eee;
-            padding: 15px;
-            background: white;
-            display: flex;
-            gap: 10px;
-        }
-        .message { padding: 10px 15px; border-radius: 12px; max-width: 85%; line-height: 1.5; font-size: 0.95rem; }
-        .msg-user { align-self: flex-end; background-color: #0d6efd; color: white; border-bottom-right-radius: 4px; }
-        .msg-ai { align-self: flex-start; background-color: white; border: 1px solid #e9ecef; border-bottom-left-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .msg-ai p:last-child { margin-bottom: 0; }
         
-        /* Floating Action Button */
-        .fab-ingest {
-            position: fixed;
-            bottom: 30px;
-            left: 30px;
-            z-index: 1040;
+        .chat-message {
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+            max-width: 90%;
+        }
+        
+        .chat-message.user {
+            align-self: flex-end;
+            background: var(--accent-cyan);
+            color: var(--bg-dark);
+        }
+        
+        .chat-message.ai {
+            align-self: flex-start;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+        }
+        
+        .chat-message.ai p:last-child { margin-bottom: 0; }
+        
+        #chat-input-area {
+            padding: 12px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+        }
+        
+        #chat-input {
+            flex: 1;
+            padding: 10px 14px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        #chat-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
         }
 
-        .loading-dots:after {
-            content: ' .';
-            animation: dots 1s steps(5, end) infinite;
+        /* Filter Bar */
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
         }
-        @keyframes dots {
-            0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0);}
-            40% { color: #333; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0);}
-            60% { text-shadow: .25em 0 0 #333, .5em 0 0 rgba(0,0,0,0);}
-            80%, 100% { text-shadow: .25em 0 0 #333, .5em 0 0 #333;}
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+        
+        .filter-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .filter-select {
+            padding: 8px 12px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 13px;
+            min-width: 140px;
+        }
+
+        /* Page Views */
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* Utilities */
+        .text-mono { font-family: var(--font-mono); }
+        .text-muted { color: var(--text-secondary); }
+        .text-danger { color: var(--danger); }
+        .text-success { color: var(--success); }
+        .text-warning { color: var(--warning); }
+        .text-cyan { color: var(--accent-cyan); }
+        .mt-4 { margin-top: 24px; }
+        .mb-4 { margin-bottom: 24px; }
+        .gap-2 { gap: 12px; }
+        .d-flex { display: flex; }
+        .align-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-in { animation: fadeIn 0.3s ease forwards; }
+
+        /* Loading */
+        .loading {
+            display: inline-flex;
+            gap: 4px;
+        }
+        
+        .loading span {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        
+        .loading span:nth-child(1) { animation-delay: -0.32s; }
+        .loading span:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Hidden */
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
-
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="#"><i class="fas fa-shield-alt me-2"></i>PACT Compliance</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link active" href="#"><i class="fas fa-chart-line me-1"></i> Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" onclick="loadData()"><i class="fas fa-sync-alt me-1"></i> Refresh</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" onclick="openApiKeyModal()"><i class="fas fa-key me-1"></i> API Key</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/docs" target="_blank" rel="noopener noreferrer"><i class="fas fa-book me-1"></i> API Docs</a></li>
-                </ul>
+    <!-- Login View -->
+    <div id="login-view" class="login-container">
+        <div class="login-card animate-in">
+            <div class="login-logo">
+                <div class="login-logo-icon">P</div>
+                <div class="login-title">PACT</div>
+                <div class="login-subtitle">Policy Automation & Compliance Traceability</div>
             </div>
-        </div>
-    </nav>
-
-    <div class="container pb-5">
-        
-        <!-- Header Section -->
-        <div class="row mb-4 align-items-center">
-            <div class="col-md-8">
-                <h2 class="fw-bold text-dark">Compliance Posture</h2>
-                <p class="text-muted mb-0">Real-time monitoring of blast radius, configuration drift, and regulatory impact.</p>
-            </div>
-            <div class="col-md-4 text-end">
-                <div class="d-flex justify-content-end gap-2 align-items-center mb-2">
-                    <select id="select-systems" class="form-select form-select-sm w-auto" multiple size="3" title="Target Systems">
-                        <option value="HRPortal" selected>HR Portal</option>
-                        <option value="PaymentGatewayCluster" selected>Payment Gateway</option>
-                    </select>
-                    <select id="select-frameworks" class="form-select form-select-sm w-auto" multiple size="3" title="Target Frameworks">
-                        <option value="NIST AC-3" selected>NIST AC-3 (Access)</option>
-                        <option value="NIST CM-7" selected>NIST CM-7 (Ports)</option>
-                    </select>
+            
+            <div id="login-error" class="login-error"></div>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" id="login-email" class="form-input" placeholder="you@company.com" required>
                 </div>
-                <div class="dropdown d-inline-block">
-                    <button class="btn btn-success dropdown-toggle" type="button" id="ingestDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-bolt me-2"></i>Simulate Event
-                    </button>
-                    <ul class="dropdown-menu" aria-labelledby="ingestDropdown">
-                        <li><a class="dropdown-item" href="#" onclick="simulateIngest('file_access')">📄 Root File Access (Fail)</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="simulateIngest('network_connection')">🌐 Telnet Connection (Fail)</a></li>
-                    </ul>
+                
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
                 </div>
-            </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+            </form>
         </div>
+    </div>
 
-        <!-- KPI Cards (Placeholder for future stats) -->
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="card bg-white h-100">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="rounded-circle bg-danger bg-opacity-10 p-3 me-3 text-danger">
-                            <i class="fas fa-exclamation-triangle fa-lg"></i>
+    <!-- App View -->
+    <div id="app-view" class="app-container hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">P</div>
+                <span class="logo-text">PACT</span>
+            </div>
+            
+            <nav class="nav-section">
+                <div class="nav-label">Overview</div>
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+                
+                <div class="nav-label" style="margin-top: 16px;">Compliance</div>
+                <a href="#" class="nav-item" data-page="blast-radius">
+                    <i class="fas fa-bomb"></i>
+                    <span>Blast Radius</span>
+                    <span class="nav-badge" id="nav-failures">0</span>
+                </a>
+                <a href="#" class="nav-item" data-page="drift">
+                    <i class="fas fa-wind"></i>
+                    <span>Config Drift</span>
+                </a>
+                <a href="#" class="nav-item" data-page="frameworks">
+                    <i class="fas fa-book"></i>
+                    <span>Frameworks</span>
+                </a>
+                
+                <div class="nav-label" style="margin-top: 16px;">Assets</div>
+                <a href="#" class="nav-item" data-page="systems">
+                    <i class="fas fa-server"></i>
+                    <span>Systems</span>
+                </a>
+                <a href="#" class="nav-item" data-page="documents">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Documents</span>
+                </a>
+                
+                <div class="nav-label admin-only" style="margin-top: 16px;">Administration</div>
+                <a href="#" class="nav-item admin-only" data-page="users">
+                    <i class="fas fa-users"></i>
+                    <span>Users</span>
+                </a>
+                <a href="#" class="nav-item admin-only" data-page="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+            
+            <div class="user-profile">
+                <div class="user-avatar" id="user-avatar">?</div>
+                <div class="user-info">
+                    <div class="user-name" id="user-name">Loading...</div>
+                    <div class="user-role" id="user-role">-</div>
+                </div>
+                <button class="logout-btn" onclick="logout()" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Page -->
+            <div id="page-dashboard" class="page active">
+                <header class="header">
+                    <h1 class="header-title">Compliance Dashboard</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" onclick="loadDashboard()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <button class="btn btn-primary" onclick="simulateEvent()">
+                            <i class="fas fa-bolt"></i> Simulate Event
+                        </button>
+                    </div>
+                </header>
+                
+                <div class="content-area">
+                    <!-- KPIs -->
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-icon danger">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div>
+                                <div class="kpi-label">Active Failures</div>
+                                <div class="kpi-value" id="kpi-failures">-</div>
+                            </div>
                         </div>
-                        <div>
-                            <h6 class="text-muted mb-1">Active Failures</h6>
-                            <h3 class="mb-0 fw-bold" id="kpi-failures">-</h3>
+                        <div class="kpi-card">
+                            <div class="kpi-icon warning">
+                                <i class="fas fa-history"></i>
+                            </div>
+                            <div>
+                                <div class="kpi-label">Drift Detected</div>
+                                <div class="kpi-value" id="kpi-drift">-</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon success">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div>
+                                <div class="kpi-label">Threats Mitigated</div>
+                                <div class="kpi-value" id="kpi-threats">-</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-icon info">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div>
+                                <div class="kpi-label">Documents</div>
+                                <div class="kpi-value" id="kpi-docs">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Blast Radius Table -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span><i class="fas fa-bomb text-danger" style="margin-right: 8px;"></i>Critical Failures</span>
+                            <span class="status-badge fail">Requires Attention</span>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>System / Process</th>
+                                        <th>Control</th>
+                                        <th>Frameworks</th>
+                                        <th>Evidence</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="blast-table-body">
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; padding: 40px;">
+                                            <div class="loading"><span></span><span></span><span></span></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Drift Table -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <span><i class="fas fa-wind text-warning" style="margin-right: 8px;"></i>Configuration Drift</span>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>System / Control</th>
+                                        <th>Drifted Asset</th>
+                                        <th>Timeline</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="drift-table-body">
+                                    <tr>
+                                        <td colspan="4" style="text-align: center; padding: 40px;">
+                                            <div class="loading"><span></span><span></span><span></span></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card bg-white h-100">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3 text-warning">
-                            <i class="fas fa-history fa-lg"></i>
+
+            <!-- Systems Page -->
+            <div id="page-systems" class="page">
+                <header class="header">
+                    <h1 class="header-title">Systems</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" onclick="showCreateSystemModal()">
+                            <i class="fas fa-plus"></i> Add System
+                        </button>
+                    </div>
+                </header>
+                
+                <div class="content-area">
+                    <div class="filter-bar">
+                        <div class="filter-group">
+                            <span class="filter-label">Status:</span>
+                            <select class="filter-select" id="system-status-filter">
+                                <option value="">All</option>
+                                <option value="active">Active</option>
+                                <option value="deprecated">Deprecated</option>
+                                <option value="archived">Archived</option>
+                            </select>
                         </div>
-                        <div>
-                            <h6 class="text-muted mb-1">Drift Detected</h6>
-                            <h3 class="mb-0 fw-bold" id="kpi-drift">-</h3>
+                        <div class="filter-group">
+                            <span class="filter-label">Search:</span>
+                            <input type="text" class="form-input" style="width: 200px;" placeholder="Search systems..." id="system-search">
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>System ID</th>
+                                        <th>Name</th>
+                                        <th>Status</th>
+                                        <th>Environment</th>
+                                        <th>Criticality</th>
+                                        <th>Owner</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="systems-table-body">
+                                    <tr>
+                                        <td colspan="7" style="text-align: center; padding: 40px;">
+                                            <div class="loading"><span></span><span></span><span></span></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
-             <div class="col-md-4">
-                <div class="card bg-white h-100">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3 text-info">
-                            <i class="fas fa-shield-virus fa-lg"></i>
-                        </div>
-                        <div>
-                            <h6 class="text-muted mb-1">Threats Mitigated</h6>
-                            <h3 class="mb-0 fw-bold" id="kpi-threats">-</h3>
+
+            <!-- Users Page (Admin Only) -->
+            <div id="page-users" class="page">
+                <header class="header">
+                    <h1 class="header-title">User Management</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" onclick="showCreateUserModal()">
+                            <i class="fas fa-user-plus"></i> Add User
+                        </button>
+                    </div>
+                </header>
+                
+                <div class="content-area">
+                    <div class="card">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Last Login</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-table-body">
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; padding: 40px;">
+                                            <div class="loading"><span></span><span></span><span></span></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Blast Radius Table -->
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-bomb me-2 text-danger"></i>Blast Radius: Critical Failures</span>
-                <span class="badge bg-danger">Requires Attention</span>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0" id="blastTable">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="ps-4">Timestamp</th>
-                                <th>Process / System</th>
-                                <th>Control Requirement</th>
-                                <th>Frameworks</th>
-                                <th>Evidence</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody">
-                            <tr><td colspan="6" class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading data...</td></tr>
-                        </tbody>
-                    </table>
+            <!-- Documents Page -->
+            <div id="page-documents" class="page">
+                <header class="header">
+                    <h1 class="header-title">Documents & Evidence</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" onclick="showUploadDocModal()">
+                            <i class="fas fa-upload"></i> Upload Document
+                        </button>
+                    </div>
+                </header>
+                
+                <div class="content-area">
+                    <div class="filter-bar">
+                        <div class="filter-group">
+                            <span class="filter-label">Type:</span>
+                            <select class="filter-select" id="doc-type-filter">
+                                <option value="">All Types</option>
+                                <option value="policy">Policy</option>
+                                <option value="procedure">Procedure</option>
+                                <option value="screenshot">Screenshot</option>
+                                <option value="attestation">Attestation</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-label">Status:</span>
+                            <select class="filter-select" id="doc-status-filter">
+                                <option value="">All</option>
+                                <option value="published">Published</option>
+                                <option value="draft">Draft</option>
+                                <option value="expired">Expired</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Controls</th>
+                                        <th>Uploaded By</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="docs-table-body">
+                                    <tr>
+                                        <td colspan="7" style="text-align: center; padding: 40px;">
+                                            <span class="text-muted">No documents found. Upload your first document.</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Configuration Drift Table -->
-        <div class="card mt-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-wind me-2 text-warning"></i>Configuration Drift</span>
-                <small class="text-muted">Regression from compliant state</small>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0" id="driftTable">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="ps-4">System / Control</th>
-                                <th>Drifted Asset</th>
-                                <th>Timeline</th>
-                                <th>Proof</th>
-                            </tr>
-                        </thead>
-                        <tbody id="driftBody">
-                             <tr><td colspan="4" class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading drift data...</td></tr>
-                        </tbody>
-                    </table>
+            <!-- Placeholder pages -->
+            <div id="page-blast-radius" class="page">
+                <header class="header">
+                    <h1 class="header-title">Blast Radius Analysis</h1>
+                </header>
+                <div class="content-area">
+                    <p class="text-muted">Detailed blast radius analysis - see Dashboard for overview.</p>
                 </div>
             </div>
-        </div>
+            
+            <div id="page-drift" class="page">
+                <header class="header">
+                    <h1 class="header-title">Configuration Drift</h1>
+                </header>
+                <div class="content-area">
+                    <p class="text-muted">Configuration drift detection - see Dashboard for overview.</p>
+                </div>
+            </div>
+            
+            <div id="page-frameworks" class="page">
+                <header class="header">
+                    <h1 class="header-title">Compliance Frameworks</h1>
+                </header>
+                <div class="content-area">
+                    <p class="text-muted">Framework management coming soon.</p>
+                </div>
+            </div>
+            
+            <div id="page-settings" class="page">
+                <header class="header">
+                    <h1 class="header-title">Settings</h1>
+                </header>
+                <div class="content-area">
+                    <p class="text-muted">Settings page coming soon.</p>
+                </div>
+            </div>
+        </main>
     </div>
 
     <!-- Chat Widget -->
-    <div id="chat-widget">
+    <div id="chat-widget" class="hidden minimized">
         <div id="chat-header" onclick="toggleChat()">
-            <span><i class="fas fa-robot me-2"></i>PACT AI Auditor</span>
-            <i class="fas fa-chevron-down transition-icon"></i>
+            <span id="chat-header-title">
+                <i class="fas fa-robot"></i>
+                <span>AI Auditor</span>
+            </span>
+            <i class="fas fa-chevron-up" id="chat-toggle-icon"></i>
         </div>
-        <div id="chat-body" class="collapse show">
-            <div class="message msg-ai">
+        <div id="chat-body">
+            <div class="chat-message ai">
                 <p><strong>Hello!</strong> 👋 I'm your AI Compliance Auditor.</p>
-                <p>I have access to the full knowledge graph. Ask me about:</p>
-                <ul class="mb-0 ps-3">
-                    <li>Why did the Payment Gateway fail?</li>
-                    <li>Is Log4Shell mitigated?</li>
-                    <li>Show me evidence for AC-3.</li>
-                </ul>
+                <p>Ask me about compliance status, controls, or evidence.</p>
             </div>
         </div>
-        <div id="chat-input-area" class="collapse show">
-            <input type="text" id="chat-input" class="form-control me-2" placeholder="Ask a question..." onkeypress="handleKeyPress(event)">
-            <button id="chat-send" class="btn btn-primary" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+        <div id="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Ask a question..." onkeypress="handleChatKeyPress(event)">
+            <button class="btn btn-primary btn-sm" onclick="sendChatMessage()">
+                <i class="fas fa-paper-plane"></i>
+            </button>
         </div>
     </div>
-
-    <!-- Toast Container -->
-    <div class="position-fixed bottom-0 start-0 p-3" style="z-index: 1100">
-        <div id="liveToast" class="toast align-items-center text-white bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body" id="toastMessage">
-                    Action successful.
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    </div>
-
-    <!-- API Key Modal -->
-    <div class="modal fade" id="apiKeyModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-key me-2"></i>Set API Key</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-muted mb-2">If the server has <code>PACT_API_KEY</code> enabled, enter it here so the dashboard can call <code>/v1/*</code>.</p>
-                    <input type="password" id="api-key-input" class="form-control" placeholder="Paste API key (stored in your browser)">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" onclick="clearApiKey()">Clear</button>
-                    <button type="button" class="btn btn-primary" onclick="saveApiKey()">Save</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bootstrap Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        const API_URL = "http://localhost:8000/v1";
-        const API_KEY_STORAGE = "pact_api_key";
-        const toastEl = document.getElementById('liveToast');
-        const toast = new bootstrap.Toast(toastEl);
-
+        // =================================================================
+        // State
+        // =================================================================
+        const API_URL = window.location.origin + '/v1';
+        let currentUser = null;
+        let accessToken = null;
+        let refreshToken = null;
+        
+        // =================================================================
+        // Auth
+        // =================================================================
+        async function login(email, password) {
+            try {
+                const res = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                    credentials: 'include'
+                });
+                
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.detail || 'Login failed');
+                }
+                
+                const data = await res.json();
+                accessToken = data.access_token;
+                refreshToken = data.refresh_token;
+                currentUser = {
+                    id: data.user_id,
+                    email: data.email,
+                    role: data.role,
+                    name: data.full_name
+                };
+                
+                // Store tokens
+                localStorage.setItem('pact_access_token', accessToken);
+                localStorage.setItem('pact_refresh_token', refreshToken);
+                localStorage.setItem('pact_user', JSON.stringify(currentUser));
+                
+                showApp();
+                loadDashboard();
+            } catch (e) {
+                showLoginError(e.message);
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('pact_access_token');
+            localStorage.removeItem('pact_refresh_token');
+            localStorage.removeItem('pact_user');
+            accessToken = null;
+            refreshToken = null;
+            currentUser = null;
+            showLogin();
+        }
+        
+        function checkAuth() {
+            accessToken = localStorage.getItem('pact_access_token');
+            refreshToken = localStorage.getItem('pact_refresh_token');
+            const userStr = localStorage.getItem('pact_user');
+            
+            if (accessToken && userStr) {
+                try {
+                    currentUser = JSON.parse(userStr);
+                    showApp();
+                    loadDashboard();
+                } catch (e) {
+                    showLogin();
+                }
+            } else {
+                showLogin();
+            }
+        }
+        
+        async function apiFetch(path, options = {}) {
+            const headers = new Headers(options.headers || {});
+            if (accessToken) {
+                headers.set('Authorization', `Bearer ${accessToken}`);
+            }
+            headers.set('Content-Type', 'application/json');
+            
+            const res = await fetch(`${API_URL}${path}`, {
+                ...options,
+                headers,
+                credentials: 'include'
+            });
+            
+            if (res.status === 401) {
+                // Try to refresh token
+                const refreshed = await tryRefreshToken();
+                if (refreshed) {
+                    headers.set('Authorization', `Bearer ${accessToken}`);
+                    return fetch(`${API_URL}${path}`, { ...options, headers, credentials: 'include' });
+                } else {
+                    logout();
+                    throw new Error('Session expired');
+                }
+            }
+            
+            return res;
+        }
+        
+        async function tryRefreshToken() {
+            if (!refreshToken) return false;
+            
+            try {
+                const res = await fetch(`${API_URL}/auth/refresh`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refresh_token: refreshToken }),
+                    credentials: 'include'
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    accessToken = data.access_token;
+                    localStorage.setItem('pact_access_token', accessToken);
+                    return true;
+                }
+            } catch (e) {
+                console.error('Token refresh failed:', e);
+            }
+            return false;
+        }
+        
+        // =================================================================
+        // Views
+        // =================================================================
+        function showLogin() {
+            document.getElementById('login-view').classList.remove('hidden');
+            document.getElementById('app-view').classList.add('hidden');
+            document.getElementById('chat-widget').classList.add('hidden');
+        }
+        
+        function showApp() {
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('app-view').classList.remove('hidden');
+            document.getElementById('chat-widget').classList.remove('hidden');
+            
+            updateUserDisplay();
+            updateNavForRole();
+        }
+        
+        function showLoginError(message) {
+            const errorEl = document.getElementById('login-error');
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+        }
+        
+        function updateUserDisplay() {
+            if (!currentUser) return;
+            
+            document.getElementById('user-name').textContent = currentUser.name;
+            document.getElementById('user-role').textContent = currentUser.role.replace('_', ' ');
+            document.getElementById('user-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
+        }
+        
+        function updateNavForRole() {
+            const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'compliance_officer');
+            
+            document.querySelectorAll('.admin-only').forEach(el => {
+                el.classList.toggle('hidden', !isAdmin);
+            });
+        }
+        
+        // =================================================================
+        // Navigation
+        // =================================================================
+        function navigateTo(pageId) {
+            // Update nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.page === pageId);
+            });
+            
+            // Update pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.toggle('active', page.id === `page-${pageId}`);
+            });
+            
+            // Load page data
+            switch (pageId) {
+                case 'dashboard':
+                    loadDashboard();
+                    break;
+                case 'systems':
+                    loadSystems();
+                    break;
+                case 'users':
+                    loadUsers();
+                    break;
+                case 'documents':
+                    loadDocuments();
+                    break;
+            }
+        }
+        
+        // =================================================================
+        // Dashboard
+        // =================================================================
+        async function loadDashboard() {
+            try {
+                // Load blast radius
+                const blastRes = await apiFetch('/compliance/blast-radius');
+                if (blastRes.ok) {
+                    const blastData = await blastRes.json();
+                    document.getElementById('kpi-failures').textContent = blastData.length;
+                    document.getElementById('nav-failures').textContent = blastData.length;
+                    renderBlastTable(blastData);
+                }
+                
+                // Load drift
+                const driftRes = await apiFetch('/compliance/drift');
+                if (driftRes.ok) {
+                    const driftData = await driftRes.json();
+                    document.getElementById('kpi-drift').textContent = driftData.length;
+                    renderDriftTable(driftData);
+                }
+                
+                // Load threats
+                const threatRes = await apiFetch('/compliance/threats');
+                if (threatRes.ok) {
+                    const threatData = await threatRes.json();
+                    document.getElementById('kpi-threats').textContent = threatData.length;
+                }
+                
+                // Placeholder for docs count
+                document.getElementById('kpi-docs').textContent = '-';
+                
+            } catch (e) {
+                console.error('Failed to load dashboard:', e);
+            }
+        }
+        
+        function renderBlastTable(data) {
+            const tbody = document.getElementById('blast-table-body');
+            
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px;">
+                            <i class="fas fa-check-circle text-success" style="font-size: 32px; margin-bottom: 12px;"></i>
+                            <br><span class="text-success">All systems compliant</span>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = data.map(row => {
+                const date = new Date(row.timestamp);
+                const timeStr = date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                
+                return `
+                    <tr>
+                        <td class="text-muted text-mono" style="font-size: 12px;">${timeStr}</td>
+                        <td>
+                            <div style="font-weight: 600;">${escapeHtml(row.process)}</div>
+                            <div class="text-muted" style="font-size: 12px;"><i class="fas fa-server"></i> ${escapeHtml(row.system)}</div>
+                        </td>
+                        <td>
+                            <span class="status-badge info">${escapeHtml(row.control.split(':')[0])}</span>
+                        </td>
+                        <td>
+                            ${(row.impacted_frameworks || '').split(', ').map(fw => 
+                                `<span class="status-badge" style="margin-right: 4px;">${escapeHtml(fw)}</span>`
+                            ).join('')}
+                        </td>
+                        <td><code class="text-mono text-danger">${escapeHtml(row.asset)}</code></td>
+                        <td>
+                            <a href="${escapeHtml(row.link || '#')}" target="_blank" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function renderDriftTable(data) {
+            const tbody = document.getElementById('drift-table-body');
+            
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 40px;">
+                            <span class="text-muted">No configuration drift detected</span>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = data.map(row => {
+                const passDate = new Date(row.previous_pass).toLocaleDateString();
+                const failDate = new Date(row.current_fail).toLocaleDateString();
+                
+                return `
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600;">${escapeHtml(row.system)}</div>
+                            <div class="text-muted" style="font-size: 12px;">${escapeHtml(row.control)}</div>
+                        </td>
+                        <td><code class="text-mono text-warning">${escapeHtml(row.asset)}</code></td>
+                        <td>
+                            <span class="text-success">${passDate}</span>
+                            <i class="fas fa-arrow-right text-muted" style="margin: 0 8px;"></i>
+                            <span class="text-danger">${failDate}</span>
+                        </td>
+                        <td>
+                            <a href="${escapeHtml(row.link || '#')}" target="_blank" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-search"></i>
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        // =================================================================
+        // Systems
+        // =================================================================
+        async function loadSystems() {
+            const tbody = document.getElementById('systems-table-body');
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;"><div class="loading"><span></span><span></span><span></span></div></td></tr>';
+            
+            try {
+                const res = await apiFetch('/systems');
+                if (res.ok) {
+                    const data = await res.json();
+                    renderSystemsTable(data.items || []);
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-muted" style="text-align: center; padding: 40px;">Failed to load systems</td></tr>';
+                }
+            } catch (e) {
+                console.error('Failed to load systems:', e);
+                tbody.innerHTML = '<tr><td colspan="7" class="text-muted" style="text-align: center; padding: 40px;">Error loading systems</td></tr>';
+            }
+        }
+        
+        function renderSystemsTable(systems) {
+            const tbody = document.getElementById('systems-table-body');
+            
+            if (systems.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-muted" style="text-align: center; padding: 40px;">No systems registered yet</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = systems.map(s => `
+                <tr>
+                    <td class="text-mono">${escapeHtml(s.system_id)}</td>
+                    <td style="font-weight: 600;">${escapeHtml(s.display_name)}</td>
+                    <td>
+                        <span class="status-badge ${s.status === 'active' ? 'pass' : s.status === 'deprecated' ? 'warn' : 'info'}">
+                            ${escapeHtml(s.status)}
+                        </span>
+                    </td>
+                    <td>${escapeHtml(s.environment)}</td>
+                    <td>
+                        <span class="status-badge ${s.criticality === 'critical' ? 'fail' : s.criticality === 'high' ? 'warn' : 'info'}">
+                            ${escapeHtml(s.criticality)}
+                        </span>
+                    </td>
+                    <td>${escapeHtml(s.owner_user || s.owner_team || '-')}</td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // =================================================================
+        // Users
+        // =================================================================
+        async function loadUsers() {
+            const tbody = document.getElementById('users-table-body');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;"><div class="loading"><span></span><span></span><span></span></div></td></tr>';
+            
+            try {
+                const res = await apiFetch('/users');
+                if (res.ok) {
+                    const data = await res.json();
+                    renderUsersTable(data.items || []);
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align: center; padding: 40px;">Failed to load users</td></tr>';
+                }
+            } catch (e) {
+                console.error('Failed to load users:', e);
+                tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align: center; padding: 40px;">Not authorized or error</td></tr>';
+            }
+        }
+        
+        function renderUsersTable(users) {
+            const tbody = document.getElementById('users-table-body');
+            
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align: center; padding: 40px;">No users found</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = users.map(u => `
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div class="user-avatar" style="width: 32px; height: 32px; font-size: 12px;">${u.full_name.charAt(0).toUpperCase()}</div>
+                            <span style="font-weight: 600;">${escapeHtml(u.full_name)}</span>
+                        </div>
+                    </td>
+                    <td class="text-mono">${escapeHtml(u.email)}</td>
+                    <td>
+                        <span class="status-badge info">${escapeHtml(u.role.replace('_', ' '))}</span>
+                    </td>
+                    <td>
+                        <span class="status-badge ${u.is_active ? 'pass' : 'fail'}">
+                            ${u.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td class="text-muted">${u.last_login ? new Date(u.last_login).toLocaleDateString() : 'Never'}</td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // =================================================================
+        // Documents
+        // =================================================================
+        async function loadDocuments() {
+            const tbody = document.getElementById('docs-table-body');
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;"><div class="loading"><span></span><span></span><span></span></div></td></tr>';
+            
+            try {
+                const res = await apiFetch('/documents');
+                if (res.ok) {
+                    const data = await res.json();
+                    renderDocsTable(data.items || []);
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-muted" style="text-align: center; padding: 40px;">No documents found</td></tr>';
+                }
+            } catch (e) {
+                console.error('Failed to load documents:', e);
+                tbody.innerHTML = '<tr><td colspan="7" class="text-muted" style="text-align: center; padding: 40px;">Error loading documents</td></tr>';
+            }
+        }
+        
+        function renderDocsTable(docs) {
+            const tbody = document.getElementById('docs-table-body');
+            
+            if (docs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-muted" style="text-align: center; padding: 40px;">No documents uploaded yet</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = docs.map(d => `
+                <tr>
+                    <td style="font-weight: 600;">${escapeHtml(d.title)}</td>
+                    <td>
+                        <span class="status-badge info">${escapeHtml(d.document_type)}</span>
+                    </td>
+                    <td>
+                        <span class="status-badge ${d.status === 'published' ? 'pass' : d.is_expired ? 'fail' : 'warn'}">
+                            ${escapeHtml(d.status)}
+                        </span>
+                    </td>
+                    <td class="text-mono" style="font-size: 12px;">${(d.controls || []).join(', ') || '-'}</td>
+                    <td>${escapeHtml(d.uploaded_by)}</td>
+                    <td class="text-muted">${new Date(d.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm"><i class="fas fa-download"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // =================================================================
+        // Chat
+        // =================================================================
+        let chatOpen = false;
+        
+        function toggleChat() {
+            const widget = document.getElementById('chat-widget');
+            const icon = document.getElementById('chat-toggle-icon');
+            
+            chatOpen = !chatOpen;
+            widget.classList.toggle('minimized', !chatOpen);
+            icon.className = chatOpen ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+        }
+        
+        function handleChatKeyPress(e) {
+            if (e.key === 'Enter') sendChatMessage();
+        }
+        
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const body = document.getElementById('chat-body');
+            const text = input.value.trim();
+            if (!text) return;
+            
+            // Add user message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'chat-message user';
+            userMsg.textContent = text;
+            body.appendChild(userMsg);
+            
+            input.value = '';
+            body.scrollTop = body.scrollHeight;
+            
+            // Add loading
+            const loadingMsg = document.createElement('div');
+            loadingMsg.className = 'chat-message ai';
+            loadingMsg.id = 'chat-loading';
+            loadingMsg.innerHTML = '<div class="loading"><span></span><span></span><span></span></div>';
+            body.appendChild(loadingMsg);
+            body.scrollTop = body.scrollHeight;
+            
+            try {
+                const res = await apiFetch('/chat', {
+                    method: 'POST',
+                    body: JSON.stringify({ question: text })
+                });
+                
+                // Remove loading
+                const loader = document.getElementById('chat-loading');
+                if (loader) loader.remove();
+                
+                const data = await res.json();
+                
+                const aiMsg = document.createElement('div');
+                aiMsg.className = 'chat-message ai';
+                
+                if (data && data.answer) {
+                    if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+                        aiMsg.innerHTML = DOMPurify.sanitize(marked.parse(data.answer));
+                    } else {
+                        aiMsg.textContent = data.answer;
+                    }
+                } else {
+                    aiMsg.textContent = 'Error: No response received.';
+                }
+                
+                body.appendChild(aiMsg);
+            } catch (e) {
+                const loader = document.getElementById('chat-loading');
+                if (loader) {
+                    loader.textContent = `Error: ${e.message}`;
+                    loader.classList.add('text-danger');
+                }
+            }
+            
+            body.scrollTop = body.scrollHeight;
+        }
+        
+        // =================================================================
+        // Simulate Event
+        // =================================================================
+        async function simulateEvent() {
+            const events = [{
+                "id": "sim-" + Date.now(),
+                "type": "file_access",
+                "system": "HRPortal",
+                "file": { "name": "secrets.yaml", "path": "/etc/secrets" },
+                "user": { "name": "root" }
+            }];
+            
+            try {
+                const res = await apiFetch('/ingest', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        events: events,
+                        target_systems: ["HRPortal"],
+                        target_frameworks: ["NIST AC-3"]
+                    })
+                });
+                
+                if (res.ok) {
+                    alert('Event ingested! Refreshing dashboard...');
+                    setTimeout(loadDashboard, 500);
+                } else {
+                    alert('Failed to ingest event');
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+        
+        // =================================================================
+        // Utilities
+        // =================================================================
         function escapeHtml(value) {
             return String(value ?? '')
                 .replace(/&/g, '&amp;')
@@ -321,328 +1661,31 @@
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
         }
-
-        function safeUrl(url) {
-            try {
-                const u = new URL(String(url ?? ''), window.location.origin);
-                if (u.protocol === 'http:' || u.protocol === 'https:') return u.href;
-            } catch (e) { /* ignore */ }
-            return '#';
-        }
-
-        function getApiKey() {
-            return (localStorage.getItem(API_KEY_STORAGE) || '').trim();
-        }
-
-        function openApiKeyModal() {
-            const input = document.getElementById('api-key-input');
-            input.value = getApiKey();
-            const modal = new bootstrap.Modal(document.getElementById('apiKeyModal'));
-            modal.show();
-        }
-
-        function saveApiKey() {
-            const input = document.getElementById('api-key-input');
-            localStorage.setItem(API_KEY_STORAGE, (input.value || '').trim());
-            showToast('API key saved.', 'success');
-            loadData();
-            const modalEl = document.getElementById('apiKeyModal');
-            const instance = bootstrap.Modal.getInstance(modalEl);
-            if (instance) instance.hide();
-        }
-
-        function clearApiKey() {
-            localStorage.removeItem(API_KEY_STORAGE);
-            showToast('API key cleared.', 'warning');
-            loadData();
-        }
-
-        async function apiFetch(path, options = {}) {
-            const headers = new Headers(options.headers || {});
-            const key = getApiKey();
-            if (key) headers.set('X-API-Key', key);
-            return fetch(`${API_URL}${path}`, { credentials: 'include', ...options, headers });
-        }
-
-        function showToast(message, type = 'primary') {
-            document.getElementById('toastMessage').textContent = message;
-            toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
-            toast.show();
-        }
-
-        async function loadData() {
-            try {
-                // Load Stats
-                const statsRes = await apiFetch(`/compliance/stats`);
-                if (statsRes.status === 401) {
-                    showToast('API key required. Click “API Key” in the navbar.', 'danger');
-                    return;
-                }
-                if(statsRes.ok) {
-                    const stats = await statsRes.json();
-                    // Just simple counts for now based on list lengths for kpis
-                }
-
-                // 1. Load Blast Radius
-                const response = await apiFetch(`/compliance/blast-radius`);
-                if (response.status === 401) {
-                    showToast('API key required. Click “API Key” in the navbar.', 'danger');
-                    return;
-                }
-                const data = await response.json();
-                const tbody = document.getElementById('tableBody');
-                tbody.innerHTML = '';
-                
-                document.getElementById('kpi-failures').textContent = data.length;
-
-                if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-success"><i class="fas fa-check-circle fa-2x mb-2"></i><br>System Compliant. No critical failures.</td></tr>';
-                } else {
-                    data.forEach(row => {
-                        const dateObj = new Date(row.timestamp);
-                        const timeStr = dateObj.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-                        // Format Control
-                        const controlParts = row.control.split(': ');
-                        const primaryId = controlParts[0] || row.control;
-                        const verbiage = controlParts.length > 1 ? controlParts[1] : row.control;
-
-                        // Format Frameworks
-                        let frameworks = [primaryId];
-                        if (row.impacted_frameworks && row.impacted_frameworks !== 'None') {
-                            frameworks = frameworks.concat(row.impacted_frameworks.split(', '));
-                        }
-                        
-                        let frameworksHtml = '';
-                        frameworks.forEach(fw => {
-                            const isPrimary = fw === primaryId;
-                            frameworksHtml += `<span class="badge badge-framework ${isPrimary ? 'primary' : ''}">${escapeHtml(fw)}</span>`;
-                        });
-
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td class="ps-4 text-muted small">${timeStr}</td>
-                            <td>
-                                <div class="fw-bold text-dark">${escapeHtml(row.process)}</div>
-                                <div class="small text-muted"><i class="fas fa-server me-1"></i>${escapeHtml(row.system)}</div>
-                            </td>
-                            <td>
-                                <span class="badge bg-light text-dark border">${escapeHtml(primaryId)}</span>
-                                <div class="small text-muted mt-1" style="max-width: 300px;">${escapeHtml(verbiage)}</div>
-                            </td>
-                            <td>${frameworksHtml}</td>
-                            <td><code class="text-danger bg-light px-2 py-1 rounded">${escapeHtml(row.asset)}</code></td>
-                            <td>
-                                <a href="${escapeHtml(safeUrl(row.link))}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary" title="View in Splunk">
-                                    <i class="fas fa-external-link-alt"></i>
-                                </a>
-                            </td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                }
-
-                // 2. Load Drift Data
-                const driftResp = await apiFetch(`/compliance/drift`);
-                if (driftResp.status === 401) {
-                    showToast('API key required. Click “API Key” in the navbar.', 'danger');
-                    return;
-                }
-                const driftData = await driftResp.json();
-                const driftBody = document.getElementById('driftBody');
-                driftBody.innerHTML = '';
-                
-                document.getElementById('kpi-drift').textContent = driftData.length;
-
-                if (driftData.length === 0) {
-                    driftBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No configuration drift detected.</td></tr>';
-                } else {
-                    driftData.forEach(row => {
-                        const passDate = new Date(row.previous_pass).toLocaleDateString();
-                        const failDate = new Date(row.current_fail).toLocaleString();
-
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td class="ps-4">
-                                <div class="fw-bold">${escapeHtml(row.system)}</div>
-                                <div class="small text-muted">${escapeHtml(row.control)}</div>
-                            </td>
-                            <td><code class="text-warning bg-light px-2 py-1 rounded">${escapeHtml(row.asset)}</code></td>
-                            <td>
-                                <div class="d-flex align-items-center small">
-                                    <span class="text-success me-2">PASSED: ${passDate}</span>
-                                    <i class="fas fa-arrow-right text-muted mx-2"></i>
-                                    <span class="text-danger">FAILED: ${failDate}</span>
-                                </div>
-                            </td>
-                            <td>
-                                <a href="${escapeHtml(safeUrl(row.link))}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary">
-                                    <i class="fas fa-search"></i> Verify
-                                </a>
-                            </td>
-                        `;
-                        driftBody.appendChild(tr);
-                    });
-                }
-                
-                // 3. Load Threats (Simple Count)
-                const threatResp = await apiFetch(`/compliance/threats`);
-                if(threatResp.ok) {
-                   const threatData = await threatResp.json();
-                   document.getElementById('kpi-threats').textContent = threatData.length;
-                }
-
-
-            } catch (error) {
-                console.error('Error:', error);
-                showToast('Failed to load data from API. Is the server running?', 'danger');
-            }
-        }
-
-        async function simulateIngest(type) {
-            let events = [];
-            if(type === 'file_access') {
-                events = [{
-                    "id": "sim-root-" + Date.now(),
-                    "type": "file_access",
-                    "system": "HRPortal",
-                    "file": { "name": "critical_secrets.yaml", "path": "/etc/secrets" },
-                    "user": { "name": "root" }
-                }];
-            } else if (type === 'network_connection') {
-                events = [{
-                    "id": "sim-net-" + Date.now(),
-                    "type": "network_connection",
-                    "system": "PaymentGatewayCluster",
-                    "destination": { "port": 23, "ip": "192.168.1.100" },
-                    "protocol": "tcp",
-                    "user": { "name": "unknown" }
-                }];
-            }
+        
+        // =================================================================
+        // Init
+        // =================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Login form
+            document.getElementById('login-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                login(email, password);
+            });
             
-            // Get selections
-            const target_systems = Array.from(document.getElementById('select-systems').selectedOptions).map(o => o.value);
-            const target_frameworks = Array.from(document.getElementById('select-frameworks').selectedOptions).map(o => o.value);
-
-            showToast('Ingesting event with filters...', 'info');
-
-            try {
-                const res = await apiFetch(`/ingest`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        events: events,
-                        target_systems: target_systems,
-                        target_frameworks: target_frameworks
-                    })
+            // Navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const page = item.dataset.page;
+                    if (page) navigateTo(page);
                 });
-                
-                if (res.status === 401) throw new Error("Unauthorized (API key required)");
-                if (!res.ok) throw new Error("API Error");
-                
-                const result = await res.json();
-                showToast(`Event Ingested! ID: ${result.scan_id}`, 'success');
-                
-                // Wait a moment for DB to update then refresh
-                setTimeout(loadData, 500);
-            } catch (e) {
-                showToast("Ingest Failed: " + e.message, 'danger');
-            }
-        }
-
-        // --- Chat Functions ---
-        let isChatOpen = true;
-        function toggleChat() {
-            const widget = document.getElementById('chat-widget');
-            const icon = document.querySelector('#chat-header .transition-icon');
+            });
             
-            if (isChatOpen) {
-                widget.classList.add('minimized');
-                document.getElementById('chat-body').style.display = 'none';
-                document.getElementById('chat-input-area').style.display = 'none';
-                icon.className = 'fas fa-chevron-up transition-icon';
-            } else {
-                widget.classList.remove('minimized');
-                document.getElementById('chat-body').style.display = 'flex';
-                document.getElementById('chat-input-area').style.display = 'flex';
-                icon.className = 'fas fa-chevron-down transition-icon';
-            }
-            isChatOpen = !isChatOpen;
-        }
-
-        function handleKeyPress(e) {
-            if (e.key === 'Enter') sendMessage();
-        }
-
-        async function sendMessage() {
-            const input = document.getElementById('chat-input');
-            const body = document.getElementById('chat-body');
-            const text = input.value.trim();
-            if (!text) return;
-
-            console.log("Sending message:", text);
-
-            // Add User Message
-            const userMsg = document.createElement('div');
-            userMsg.className = 'message msg-user';
-            userMsg.textContent = text;
-            body.appendChild(userMsg);
-            
-            input.value = '';
-            body.scrollTop = body.scrollHeight;
-
-            // Add Loading Indicator
-            const loadingMsg = document.createElement('div');
-            loadingMsg.className = 'message msg-ai';
-            loadingMsg.id = 'ai-loading-indicator';
-            loadingMsg.innerHTML = '<span class="loading-dots">Thinking</span>';
-            body.appendChild(loadingMsg);
-            body.scrollTop = body.scrollHeight;
-
-            try {
-                const res = await apiFetch(`/chat`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ question: text })
-                });
-                if (res.status === 401) throw new Error("Unauthorized (API key required)");
-                
-                const data = await res.json();
-                console.log("Received AI response:", data);
-                
-                // Remove loading
-                const indicator = document.getElementById('ai-loading-indicator');
-                if (indicator) body.removeChild(indicator);
-
-                const aiMsg = document.createElement('div');
-                aiMsg.className = 'message msg-ai';
-                
-                if (data && data.answer) {
-                    // Prefer safe rendering. If DOMPurify is available, allow markdown -> HTML but sanitize it.
-                    if (typeof marked !== 'undefined' && marked.parse && typeof DOMPurify !== 'undefined') {
-                        const rendered = marked.parse(data.answer);
-                        aiMsg.innerHTML = DOMPurify.sanitize(rendered);
-                    } else {
-                        aiMsg.textContent = data.answer;
-                    }
-                } else {
-                    aiMsg.textContent = "Error: Received empty response from server.";
-                    aiMsg.classList.add('text-danger');
-                }
-                body.appendChild(aiMsg);
-            } catch (e) {
-                console.error("Chat error:", e);
-                const indicator = document.getElementById('ai-loading-indicator');
-                if (indicator) {
-                    indicator.textContent = `Error: ${e.message}`;
-                    indicator.classList.add('text-danger');
-                }
-            }
-            body.scrollTop = body.scrollHeight;
-        }
-
-        // Load on startup
-        document.addEventListener('DOMContentLoaded', loadData);
+            // Check auth on load
+            checkAuth();
+        });
     </script>
 </body>
 </html>
