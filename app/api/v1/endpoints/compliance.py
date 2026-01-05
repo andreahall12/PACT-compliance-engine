@@ -1,7 +1,11 @@
-from fastapi import APIRouter
+import re
+
+from fastapi import APIRouter, HTTPException
 from app.core.store import db
 
 router = APIRouter()
+
+_VULN_FILTER_RE = re.compile(r"^[A-Za-z0-9 _\\-\\.:/]{1,64}$")
 
 @router.get("/blast-radius")
 def get_blast_radius():
@@ -132,6 +136,14 @@ def check_threat_mitigation(vulnerability: str = None):
         LIMIT 50
         """
     else:
+        if not _VULN_FILTER_RE.fullmatch(vulnerability):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid vulnerability filter. Use letters/numbers/space and -_.:/ (max 64 chars).",
+            )
+
+        # Escape for embedding in a SPARQL string literal.
+        safe_vuln = vulnerability.replace("\\", "\\\\").replace('"', '\\"')
         sparql = f"""
         PREFIX pact: <http://your-org.com/ns/pact#>
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -140,7 +152,7 @@ def check_threat_mitigation(vulnerability: str = None):
         WHERE {{
             ?control pact:mitigates ?vuln .
             ?vuln rdfs:label ?vulnName .
-            FILTER (REGEX(?vulnName, "{vulnerability}", "i"))
+            FILTER (REGEX(?vulnName, "{safe_vuln}", "i"))
             
             ?control rdfs:label ?controlName .
             

@@ -5,16 +5,27 @@ from app.core.store import db
 
 router = APIRouter()
 
+from pydantic import BaseModel, Field
+
+class IngestRequest(BaseModel):
+    events: List[Dict[str, Any]]
+    target_systems: List[str] = Field(default_factory=list)
+    target_frameworks: List[str] = Field(default_factory=list)
+
 @router.post("")
-def ingest_events(events: List[Dict[str, Any]] = Body(...)):
+def ingest_events(request: IngestRequest = Body(...)):
     """
     Ingest a list of OCSF-like JSON events, run compliance checks, and store the result.
     """
-    if not events:
+    if not request.events:
         raise HTTPException(status_code=400, detail="No events provided")
     
     try:
-        scan_uri, graph_data = run_assessment(events)
+        scan_uri, graph_data = run_assessment(
+            request.events, 
+            target_systems=request.target_systems,
+            target_frameworks=request.target_frameworks
+        )
         
         # Save to Store
         db.add_graph(scan_uri, graph_data)
