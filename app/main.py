@@ -20,7 +20,7 @@ def home():
     return {"message": "PACT Compliance Engine is Running. Access docs at /docs"}
 
 # Include the API router
-app.include_router(api_router)
+app.include_router(api_router, prefix="/v1")
 
 if __name__ == "__main__":
     import uvicorn
