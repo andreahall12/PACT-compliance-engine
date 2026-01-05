@@ -88,6 +88,8 @@ async def chat_with_auditor(payload: Dict[str, str] = Body(...)):
     question = payload.get("question")
     if not question:
         raise HTTPException(status_code=400, detail="No question provided")
+    if len(question) > 4000:
+        raise HTTPException(status_code=400, detail="Question too long (max 4000 chars)")
 
     api_key = OPENAI_API_KEY
     ollama_host = OLLAMA_HOST
