@@ -11,6 +11,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Simple Markdown Parser -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- HTML Sanitizer (for LLM/Markdown output) -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
 
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -113,7 +115,8 @@
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link active" href="#"><i class="fas fa-chart-line me-1"></i> Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link" href="#" onclick="loadData()"><i class="fas fa-sync-alt me-1"></i> Refresh</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/docs" target="_blank"><i class="fas fa-book me-1"></i> API Docs</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="openApiKeyModal()"><i class="fas fa-key me-1"></i> API Key</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/docs" target="_blank" rel="noopener noreferrer"><i class="fas fa-book me-1"></i> API Docs</a></li>
                 </ul>
             </div>
         </div>
@@ -128,6 +131,16 @@
                 <p class="text-muted mb-0">Real-time monitoring of blast radius, configuration drift, and regulatory impact.</p>
             </div>
             <div class="col-md-4 text-end">
+                <div class="d-flex justify-content-end gap-2 align-items-center mb-2">
+                    <select id="select-systems" class="form-select form-select-sm w-auto" multiple size="3" title="Target Systems">
+                        <option value="HRPortal" selected>HR Portal</option>
+                        <option value="PaymentGatewayCluster" selected>Payment Gateway</option>
+                    </select>
+                    <select id="select-frameworks" class="form-select form-select-sm w-auto" multiple size="3" title="Target Frameworks">
+                        <option value="NIST AC-3" selected>NIST AC-3 (Access)</option>
+                        <option value="NIST CM-7" selected>NIST CM-7 (Ports)</option>
+                    </select>
+                </div>
                 <div class="dropdown d-inline-block">
                     <button class="btn btn-success dropdown-toggle" type="button" id="ingestDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-bolt me-2"></i>Simulate Event
@@ -271,13 +284,85 @@
         </div>
     </div>
 
+    <!-- API Key Modal -->
+    <div class="modal fade" id="apiKeyModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-key me-2"></i>Set API Key</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-2">If the server has <code>PACT_API_KEY</code> enabled, enter it here so the dashboard can call <code>/v1/*</code>.</p>
+                    <input type="password" id="api-key-input" class="form-control" placeholder="Paste API key (stored in your browser)">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" onclick="clearApiKey()">Clear</button>
+                    <button type="button" class="btn btn-primary" onclick="saveApiKey()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        const API_URL = "http://localhost:8000";
+        const API_URL = "http://localhost:8000/v1";
+        const API_KEY_STORAGE = "pact_api_key";
         const toastEl = document.getElementById('liveToast');
         const toast = new bootstrap.Toast(toastEl);
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function safeUrl(url) {
+            try {
+                const u = new URL(String(url ?? ''), window.location.origin);
+                if (u.protocol === 'http:' || u.protocol === 'https:') return u.href;
+            } catch (e) { /* ignore */ }
+            return '#';
+        }
+
+        function getApiKey() {
+            return (localStorage.getItem(API_KEY_STORAGE) || '').trim();
+        }
+
+        function openApiKeyModal() {
+            const input = document.getElementById('api-key-input');
+            input.value = getApiKey();
+            const modal = new bootstrap.Modal(document.getElementById('apiKeyModal'));
+            modal.show();
+        }
+
+        function saveApiKey() {
+            const input = document.getElementById('api-key-input');
+            localStorage.setItem(API_KEY_STORAGE, (input.value || '').trim());
+            showToast('API key saved.', 'success');
+            loadData();
+            const modalEl = document.getElementById('apiKeyModal');
+            const instance = bootstrap.Modal.getInstance(modalEl);
+            if (instance) instance.hide();
+        }
+
+        function clearApiKey() {
+            localStorage.removeItem(API_KEY_STORAGE);
+            showToast('API key cleared.', 'warning');
+            loadData();
+        }
+
+        async function apiFetch(path, options = {}) {
+            const headers = new Headers(options.headers || {});
+            const key = getApiKey();
+            if (key) headers.set('X-API-Key', key);
+            return fetch(`${API_URL}${path}`, { credentials: 'include', ...options, headers });
+        }
 
         function showToast(message, type = 'primary') {
             document.getElementById('toastMessage').textContent = message;
@@ -288,14 +373,22 @@
         async function loadData() {
             try {
                 // Load Stats
-                const statsRes = await fetch(`${API_URL}/compliance/stats`);
+                const statsRes = await apiFetch(`/compliance/stats`);
+                if (statsRes.status === 401) {
+                    showToast('API key required. Click “API Key” in the navbar.', 'danger');
+                    return;
+                }
                 if(statsRes.ok) {
                     const stats = await statsRes.json();
                     // Just simple counts for now based on list lengths for kpis
                 }
 
                 // 1. Load Blast Radius
-                const response = await fetch(`${API_URL}/compliance/blast-radius`);
+                const response = await apiFetch(`/compliance/blast-radius`);
+                if (response.status === 401) {
+                    showToast('API key required. Click “API Key” in the navbar.', 'danger');
+                    return;
+                }
                 const data = await response.json();
                 const tbody = document.getElementById('tableBody');
                 tbody.innerHTML = '';
@@ -323,24 +416,24 @@
                         let frameworksHtml = '';
                         frameworks.forEach(fw => {
                             const isPrimary = fw === primaryId;
-                            frameworksHtml += `<span class="badge badge-framework ${isPrimary ? 'primary' : ''}">${fw}</span>`;
+                            frameworksHtml += `<span class="badge badge-framework ${isPrimary ? 'primary' : ''}">${escapeHtml(fw)}</span>`;
                         });
 
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td class="ps-4 text-muted small">${timeStr}</td>
                             <td>
-                                <div class="fw-bold text-dark">${row.process}</div>
-                                <div class="small text-muted"><i class="fas fa-server me-1"></i>${row.system}</div>
+                                <div class="fw-bold text-dark">${escapeHtml(row.process)}</div>
+                                <div class="small text-muted"><i class="fas fa-server me-1"></i>${escapeHtml(row.system)}</div>
                             </td>
                             <td>
-                                <span class="badge bg-light text-dark border">${primaryId}</span>
-                                <div class="small text-muted mt-1" style="max-width: 300px;">${verbiage}</div>
+                                <span class="badge bg-light text-dark border">${escapeHtml(primaryId)}</span>
+                                <div class="small text-muted mt-1" style="max-width: 300px;">${escapeHtml(verbiage)}</div>
                             </td>
                             <td>${frameworksHtml}</td>
-                            <td><code class="text-danger bg-light px-2 py-1 rounded">${row.asset}</code></td>
+                            <td><code class="text-danger bg-light px-2 py-1 rounded">${escapeHtml(row.asset)}</code></td>
                             <td>
-                                <a href="${row.link}" target="_blank" class="btn btn-sm btn-outline-secondary" title="View in Splunk">
+                                <a href="${escapeHtml(safeUrl(row.link))}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary" title="View in Splunk">
                                     <i class="fas fa-external-link-alt"></i>
                                 </a>
                             </td>
@@ -350,7 +443,11 @@
                 }
 
                 // 2. Load Drift Data
-                const driftResp = await fetch(`${API_URL}/compliance/drift`);
+                const driftResp = await apiFetch(`/compliance/drift`);
+                if (driftResp.status === 401) {
+                    showToast('API key required. Click “API Key” in the navbar.', 'danger');
+                    return;
+                }
                 const driftData = await driftResp.json();
                 const driftBody = document.getElementById('driftBody');
                 driftBody.innerHTML = '';
@@ -367,10 +464,10 @@
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td class="ps-4">
-                                <div class="fw-bold">${row.system}</div>
-                                <div class="small text-muted">${row.control}</div>
+                                <div class="fw-bold">${escapeHtml(row.system)}</div>
+                                <div class="small text-muted">${escapeHtml(row.control)}</div>
                             </td>
-                            <td><code class="text-warning bg-light px-2 py-1 rounded">${row.asset}</code></td>
+                            <td><code class="text-warning bg-light px-2 py-1 rounded">${escapeHtml(row.asset)}</code></td>
                             <td>
                                 <div class="d-flex align-items-center small">
                                     <span class="text-success me-2">PASSED: ${passDate}</span>
@@ -379,7 +476,7 @@
                                 </div>
                             </td>
                             <td>
-                                <a href="${row.link}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                <a href="${escapeHtml(safeUrl(row.link))}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary">
                                     <i class="fas fa-search"></i> Verify
                                 </a>
                             </td>
@@ -389,7 +486,7 @@
                 }
                 
                 // 3. Load Threats (Simple Count)
-                const threatResp = await fetch(`${API_URL}/compliance/threats`);
+                const threatResp = await apiFetch(`/compliance/threats`);
                 if(threatResp.ok) {
                    const threatData = await threatResp.json();
                    document.getElementById('kpi-threats').textContent = threatData.length;
@@ -403,33 +500,44 @@
         }
 
         async function simulateIngest(type) {
-            let event = [];
+            let events = [];
             if(type === 'file_access') {
-                event = [{
+                events = [{
                     "id": "sim-root-" + Date.now(),
                     "type": "file_access",
+                    "system": "HRPortal",
                     "file": { "name": "critical_secrets.yaml", "path": "/etc/secrets" },
                     "user": { "name": "root" }
                 }];
             } else if (type === 'network_connection') {
-                event = [{
+                events = [{
                     "id": "sim-net-" + Date.now(),
                     "type": "network_connection",
+                    "system": "PaymentGatewayCluster",
                     "destination": { "port": 23, "ip": "192.168.1.100" },
                     "protocol": "tcp",
                     "user": { "name": "unknown" }
                 }];
             }
             
-            showToast('Ingesting event...', 'info');
+            // Get selections
+            const target_systems = Array.from(document.getElementById('select-systems').selectedOptions).map(o => o.value);
+            const target_frameworks = Array.from(document.getElementById('select-frameworks').selectedOptions).map(o => o.value);
+
+            showToast('Ingesting event with filters...', 'info');
 
             try {
-                const res = await fetch(`${API_URL}/ingest`, {
+                const res = await apiFetch(`/ingest`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(event)
+                    body: JSON.stringify({
+                        events: events,
+                        target_systems: target_systems,
+                        target_frameworks: target_frameworks
+                    })
                 });
                 
+                if (res.status === 401) throw new Error("Unauthorized (API key required)");
                 if (!res.ok) throw new Error("API Error");
                 
                 const result = await res.json();
@@ -492,11 +600,12 @@
             body.scrollTop = body.scrollHeight;
 
             try {
-                const res = await fetch(`${API_URL}/chat`, {
+                const res = await apiFetch(`/chat`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ question: text })
                 });
+                if (res.status === 401) throw new Error("Unauthorized (API key required)");
                 
                 const data = await res.json();
                 console.log("Received AI response:", data);
@@ -509,9 +618,10 @@
                 aiMsg.className = 'message msg-ai';
                 
                 if (data && data.answer) {
-                    // Safety check for 'marked' library
-                    if (typeof marked !== 'undefined' && marked.parse) {
-                        aiMsg.innerHTML = marked.parse(data.answer);
+                    // Prefer safe rendering. If DOMPurify is available, allow markdown -> HTML but sanitize it.
+                    if (typeof marked !== 'undefined' && marked.parse && typeof DOMPurify !== 'undefined') {
+                        const rendered = marked.parse(data.answer);
+                        aiMsg.innerHTML = DOMPurify.sanitize(rendered);
                     } else {
                         aiMsg.textContent = data.answer;
                     }
@@ -523,7 +633,10 @@
             } catch (e) {
                 console.error("Chat error:", e);
                 const indicator = document.getElementById('ai-loading-indicator');
-                if (indicator) indicator.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle me-2"></i>Error: ${e.message}</span>`;
+                if (indicator) {
+                    indicator.textContent = `Error: ${e.message}`;
+                    indicator.classList.add('text-danger');
+                }
             }
             body.scrollTop = body.scrollHeight;
         }

@@ -31,3 +31,21 @@ os.makedirs(DB_DIR, exist_ok=True)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434/v1")
 AI_MODEL = os.getenv("AI_MODEL", "granite3.3:8b")
+
+# API Security (optional)
+# If set, endpoints protected with `require_api_key` will require header: X-API-Key: <PACT_API_KEY>
+PACT_API_KEY = os.getenv("PACT_API_KEY")
+
+# CORS (default is permissive for local dev; lock this down in prod)
+# Examples:
+#   CORS_ALLOW_ORIGINS="https://your-ui.example.com"
+#   CORS_ALLOW_ORIGINS="https://a.com,https://b.com"
+#   CORS_ALLOW_ORIGINS="*"
+CORS_ALLOW_ORIGINS = os.getenv("CORS_ALLOW_ORIGINS", "*")
+
+
+def get_cors_allow_origins() -> list[str]:
+    value = (CORS_ALLOW_ORIGINS or "*").strip()
+    if value == "*" or value == "":
+        return ["*"]
+    return [o.strip() for o in value.split(",") if o.strip()]
