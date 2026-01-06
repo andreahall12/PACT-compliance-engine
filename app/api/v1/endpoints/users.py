@@ -6,28 +6,30 @@ Requires admin or compliance officer role for most operations.
 
 from typing import List, Optional
 
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.models.user import User, UserRole, Team
 from app.models.audit import AuditLog, AuditAction
 from app.auth.dependencies import (
     get_current_user,
-    require_role,
     require_permission,
-    get_client_ip,
-    get_user_agent,
 )
 from app.auth.password import generate_temp_password
 from app.schemas.user import (
     UserCreate,
     UserUpdate,
     UserResponse,
-    UserListResponse,
     TeamResponse,
+    user_to_response,
 )
+from app.schemas.common import PaginatedResponse
+from app.auth.audit import create_audit_log
 
 router = APIRouter()
 
@@ -36,7 +38,7 @@ router = APIRouter()
 # User CRUD
 # =============================================================================
 
-@router.get("", response_model=UserListResponse)
+@router.get("", response_model=PaginatedResponse[UserResponse])
 async def list_users(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -80,7 +82,6 @@ async def list_users(
     total = result.scalar()
     
     # Apply pagination and eager load teams relationship
-    from sqlalchemy.orm import selectinload
     offset = (page - 1) * per_page
     query = (
         query
@@ -93,29 +94,14 @@ async def list_users(
     result = await db.execute(query)
     users = result.scalars().all()
     
-    # Convert to response
-    items = []
-    for user in users:
-        items.append(UserResponse(
-            id=user.id,
-            email=user.email,
-            full_name=user.full_name,
-            role=user.role,
-            is_active=user.is_active,
-            is_verified=user.is_verified,
-            teams=[t.name for t in user.teams],
-            created_at=user.created_at,
-            last_login=user.last_login,
-        ))
+    # Convert to response using helper
+    items = [user_to_response(user) for user in users]
     
-    pages = (total + per_page - 1) // per_page if per_page > 0 else 0
-    
-    return UserListResponse(
+    return PaginatedResponse.create(
         items=items,
         total=total,
         page=page,
         per_page=per_page,
-        pages=pages,
     )
 
 
@@ -170,24 +156,21 @@ async def create_user(
     
     db.add(user)
     
-    # Audit log
-    audit = AuditLog.create(
+    # Audit log using helper
+    audit = create_audit_log(
+        request=request,
+        user=current_user,
         action=AuditAction.USER_CREATED,
-        user_id=current_user.id,
-        user_email=current_user.email,
         resource_type="user",
         resource_id=user_data.email,
         resource_name=user_data.full_name,
         details={"role": user_data.role.value},
-        ip_address=get_client_ip(request),
-        user_agent=get_user_agent(request),
     )
     db.add(audit)
     
     await db.commit()
     
     # Re-query with eager loading to avoid lazy load issues
-    from sqlalchemy.orm import selectinload
     result = await db.execute(
         select(User).where(User.id == user.id).options(selectinload(User.teams))
     )
@@ -195,17 +178,7 @@ async def create_user(
     
     # TODO: Send welcome email with temp_password if send_welcome_email is True
     
-    return UserResponse(
-        id=user.id,
-        email=user.email,
-        full_name=user.full_name,
-        role=user.role,
-        is_active=user.is_active,
-        is_verified=user.is_verified,
-        teams=[t.name for t in user.teams],
-        created_at=user.created_at,
-        last_login=user.last_login,
-    )
+    return user_to_response(user)
 
 
 @router.get("/{user_id}", response_model=UserResponse)
@@ -219,7 +192,6 @@ async def get_user(
     
     Requires: users.read permission
     """
-    from sqlalchemy.orm import selectinload
     result = await db.execute(
         select(User)
         .where(User.id == user_id, User.deleted_at.is_(None))
@@ -233,17 +205,7 @@ async def get_user(
             detail="User not found",
         )
     
-    return UserResponse(
-        id=user.id,
-        email=user.email,
-        full_name=user.full_name,
-        role=user.role,
-        is_active=user.is_active,
-        is_verified=user.is_verified,
-        teams=[t.name for t in user.teams],
-        created_at=user.created_at,
-        last_login=user.last_login,
-    )
+    return user_to_response(user)
 
 
 @router.patch("/{user_id}", response_model=UserResponse)
@@ -321,12 +283,12 @@ async def update_user(
         teams = result.scalars().all()
         user.teams = list(teams)
     
-    # Audit log
+    # Audit log using helper
     action = AuditAction.USER_ROLE_CHANGED if role_changed else AuditAction.USER_UPDATED
-    audit = AuditLog.create(
+    audit = create_audit_log(
+        request=request,
+        user=current_user,
         action=action,
-        user_id=current_user.id,
-        user_email=current_user.email,
         resource_type="user",
         resource_id=str(user.id),
         resource_name=user.email,
@@ -334,31 +296,18 @@ async def update_user(
             "old_role": old_role.value if role_changed else None,
             "new_role": user.role.value if role_changed else None,
         },
-        ip_address=get_client_ip(request),
-        user_agent=get_user_agent(request),
     )
     db.add(audit)
     
     await db.commit()
     
     # Re-query with eager loading to avoid lazy load issues
-    from sqlalchemy.orm import selectinload
     result = await db.execute(
         select(User).where(User.id == user.id).options(selectinload(User.teams))
     )
     user = result.scalar_one()
     
-    return UserResponse(
-        id=user.id,
-        email=user.email,
-        full_name=user.full_name,
-        role=user.role,
-        is_active=user.is_active,
-        is_verified=user.is_verified,
-        teams=[t.name for t in user.teams],
-        created_at=user.created_at,
-        last_login=user.last_login,
-    )
+    return user_to_response(user)
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -391,20 +340,17 @@ async def delete_user(
         )
     
     # Soft delete
-    from datetime import datetime, timezone
     user.deleted_at = datetime.now(timezone.utc)
     user.is_active = False
     
-    # Audit log
-    audit = AuditLog.create(
+    # Audit log using helper
+    audit = create_audit_log(
+        request=request,
+        user=current_user,
         action=AuditAction.USER_DELETED,
-        user_id=current_user.id,
-        user_email=current_user.email,
         resource_type="user",
         resource_id=str(user.id),
         resource_name=user.email,
-        ip_address=get_client_ip(request),
-        user_agent=get_user_agent(request),
     )
     db.add(audit)
     

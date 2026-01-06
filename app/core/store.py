@@ -22,7 +22,7 @@ class PACTStore:
             print(f"Loading Graph DB from {self.storage_file}...")
             try:
                 self.ds.parse(self.storage_file, format='trig')
-                print(f"Loaded {len(list(self.ds.graphs()))} Named Graphs.")
+                print(f"Loaded {sum(1 for _ in self.ds.graphs())} Named Graphs.")
             except Exception as e:
                 print(f"Error loading graph: {e}")
         else:
@@ -47,29 +47,52 @@ class PACTStore:
                 print(f"Error loading {filename}: {e}")
 
     def save(self):
-        """Persist changes to disk (Simulating DB Commit)"""
+        """Persist changes to disk using atomic write (temp file + rename)."""
+        import tempfile
+        import shutil
+        
         with self.lock:
-            self.ds.serialize(destination=self.storage_file, format='trig')
+            # Write to temp file first, then rename for atomicity
+            dir_name = os.path.dirname(self.storage_file) or "."
+            fd, temp_path = tempfile.mkstemp(suffix=".trig", dir=dir_name)
+            try:
+                os.close(fd)
+                self.ds.serialize(destination=temp_path, format='trig')
+                shutil.move(temp_path, self.storage_file)
+            except Exception:
+                # Clean up temp file on failure
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+                raise
 
     def add_graph(self, graph_uri, graph_data):
-        """Merge a new scan (Graph) into the Dataset"""
-        target_graph = self.ds.graph(URIRef(graph_uri))
-        
-        # Add triples from the new graph data to the dataset's named graph
-        for s, p, o in graph_data:
-            target_graph.add((s, p, o))
+        """Merge a new scan (Graph) into the Dataset (thread-safe)."""
+        with self.lock:
+            target_graph = self.ds.graph(URIRef(graph_uri))
             
+            # Add triples from the new graph data to the dataset's named graph
+            for s, p, o in graph_data:
+                target_graph.add((s, p, o))
+        
+        # Save outside the main lock to avoid holding it during I/O
         self.save()
 
     def query(self, sparql_query):
-        """Execute SPARQL Query"""
-        return self.ds.query(sparql_query)
+        """Execute SPARQL Query (thread-safe read)."""
+        with self.lock:
+            return list(self.ds.query(sparql_query))
+
+    def _graph_count(self) -> int:
+        """Count graphs without creating intermediate list."""
+        return sum(1 for _ in self.ds.graphs())
 
     def get_stats(self):
-        return {
-            "total_triples": len(self.ds),
-            "total_graphs": len(list(self.ds.graphs()))
-        }
+        """Get store statistics (thread-safe)."""
+        with self.lock:
+            return {
+                "total_triples": len(self.ds),
+                "total_graphs": self._graph_count()
+            }
 
 # Singleton Instance
 db = PACTStore()

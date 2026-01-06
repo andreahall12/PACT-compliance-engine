@@ -3,13 +3,13 @@
 @prefix uco-obs: <https://ontology.unifiedcyberontology.org/uco/observable/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-<http://your-org.com/ns/pact/graph/2025-12-15T17:00:59.791353> {
+<http://your-org.com/ns/pact/graph/2025-12-15T15:44:15.151694> {
     pact:Control_CM7 a pact:Control ;
         rdfs:label "NIST CM-7: Least Functionality" .
 
     pact:HRPortal a pact:System ;
         rdfs:label "HR Employee Portal" ;
-        pact:hasComponent <http://your-org.com/ns/pact#evidence/gemara-test-001> ;
+        pact:hasComponent <http://your-org.com/ns/pact#evidence/sim-event-1765831455141> ;
         pact:ownedByTeam "CorpIT" ;
         pact:supports pact:EmployeeOnboarding .
 
@@ -29,23 +29,22 @@
         rdfs:label "Credit Card Payment Processing" ;
         rdfs:comment "Critical process for handling customer transactions." .
 
-    <http://your-org.com/ns/pact#evidence/gemara-test-001> a uco-obs:File ;
-        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dgemara-test-001"^^xsd:anyURI ;
-        uco-obs:fileName "gemara_test_config.yaml" ;
+    <http://your-org.com/ns/pact#evidence/sim-event-1765831455141> a uco-obs:File ;
+        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dsim-event-1765831455141"^^xsd:anyURI ;
+        uco-obs:fileName "critical_secrets.yaml" ;
         uco-obs:owner "root" .
 
-    _:n5cacc089c4774e2ca52169a85c7006cbb14 a pact:ComplianceAssessment ;
-        rdfs:label "Check for gemara-test-001" ;
-        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/gemara-test-001> ;
-        pact:generatedAt "2025-12-15T17:00:59.791353"^^xsd:dateTime ;
+    _:n0e5dfc70c0ac4a78a9a30da9a51c9a0fb4 a pact:ComplianceAssessment ;
+        rdfs:label "Check for sim-event-1765831455141" ;
+        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/sim-event-1765831455141> ;
+        pact:generatedAt "2025-12-15T15:44:15.151694"^^xsd:dateTime ;
         pact:hasVerdict "FAIL" ;
         pact:validatesControl pact:Control_AC3 .
 }
 
-<http://your-org.com/ns/pact/graph/2025-12-19T13:12:09.075152> {
+<http://your-org.com/ns/pact/graph/2025-12-15T16:14:35.937314> {
     pact:Control_CM7 a pact:Control ;
-        rdfs:label "NIST CM-7: Least Functionality" ;
-        rdfs:comment "Configure the system to provide only essential capabilities and prohibit or restrict the use of non-essential functions, ports, protocols, and services." .
+        rdfs:label "NIST CM-7: Least Functionality" .
 
     pact:HRPortal a pact:System ;
         rdfs:label "HR Employee Portal" ;
@@ -57,6 +56,57 @@
         rdfs:label "Payment Gateway Prod" ;
         pact:ownedByTeam "FinTech-Ops" ;
         pact:supports pact:PaymentProcessing .
+
+    <http://your-org.com/ns/pact#evidence/gemara-test-001> a uco-obs:File ;
+        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dgemara-test-001"^^xsd:anyURI ;
+        uco-obs:fileName "gemara_test_config.yaml" ;
+        uco-obs:owner "root" .
+
+    pact:Control_AC3 a pact:Control ;
+        rdfs:label "NIST AC-3: Access Enforcement" .
+
+    pact:EmployeeOnboarding a pact:BusinessProcess ;
+        rdfs:label "Employee Onboarding" ;
+        rdfs:comment "Internal HR process for new hires." .
+
+    pact:PaymentProcessing a pact:BusinessProcess ;
+        rdfs:label "Credit Card Payment Processing" ;
+        rdfs:comment "Critical process for handling customer transactions." .
+
+    _:n0e5dfc70c0ac4a78a9a30da9a51c9a0fb14 a pact:ComplianceAssessment ;
+        rdfs:label "Check for gemara-test-001" ;
+        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/gemara-test-001> ;
+        pact:generatedAt "2025-12-15T16:14:35.937314"^^xsd:dateTime ;
+        pact:hasVerdict "FAIL" ;
+        pact:validatesControl pact:Control_AC3 .
+}
+
+<http://your-org.com/ns/pact/scan/d1f2a09b-cfb2-417e-97de-1a729c884dd0> {
+    pact:CorporateSSO a pact:System ;
+        rdfs:label "CorporateSSO" ;
+        pact:hasComponent <http://your-org.com/ns/pact#evidence/auto-01b91d6e> .
+
+    pact:Control_CM7 a pact:Control ;
+        rdfs:label "NIST CM-7: Least Functionality" ;
+        rdfs:comment "Configure the system to provide only essential capabilities and prohibit or restrict the use of non-essential functions, ports, protocols, and services." .
+
+    pact:HRPortal a pact:System ;
+        rdfs:label "HR Employee Portal" ;
+        pact:ownedByTeam "CorpIT" ;
+        pact:supports pact:EmployeeOnboarding .
+
+    pact:PaymentGatewayCluster a pact:System ;
+        rdfs:label "Payment Gateway Prod" ;
+        pact:ownedByTeam "FinTech-Ops" ;
+        pact:supports pact:PaymentProcessing .
+
+    <http://your-org.com/ns/pact#evidence/auto-01b91d6e> a uco-obs:Account ;
+        pact:authMethod "password" ;
+        pact:authResult "success" ;
+        pact:eventId "auto-01b91d6e" ;
+        pact:eventType "authentication" ;
+        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search+id%3Dauto-01b91d6e"^^xsd:anyURI ;
+        uco-obs:accountLogin "admin" .
 
     pact:Control_AC3 a pact:Control ;
         rdfs:label "NIST AC-3: Access Enforcement" ;
@@ -70,120 +120,13 @@
         rdfs:label "Credit Card Payment Processing" ;
         rdfs:comment "Critical process for handling customer transactions." .
 
-    <http://your-org.com/ns/pact#evidence/gemara-test-001> a uco-obs:File ;
-        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dgemara-test-001"^^xsd:anyURI ;
-        uco-obs:fileName "gemara_test_config.yaml" ;
-        uco-obs:owner "root" .
-
-    _:Nc01cba2868c3487c852fd73757bcfc88 a pact:ComplianceAssessment ;
-        rdfs:label "Check for gemara-test-001" ;
-        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/gemara-test-001> ;
-        pact:generatedAt "2025-12-19T13:12:09.075152"^^xsd:dateTime ;
-        pact:hasVerdict "FAIL" ;
-        pact:validatesControl pact:Control_AC3 .
-}
-
-<http://your-org.com/ns/pact/graph/2025-12-15T16:06:41.520162> {
-    pact:Control_CM7 a pact:Control ;
-        rdfs:label "NIST CM-7: Least Functionality" .
-
-    pact:HRPortal a pact:System ;
-        rdfs:label "HR Employee Portal" ;
-        pact:hasComponent <http://your-org.com/ns/pact#evidence/vuln-test-002> ;
-        pact:ownedByTeam "CorpIT" ;
-        pact:supports pact:EmployeeOnboarding .
-
-    pact:PaymentGatewayCluster a pact:System ;
-        rdfs:label "Payment Gateway Prod" ;
-        pact:ownedByTeam "FinTech-Ops" ;
-        pact:supports pact:PaymentProcessing .
-
-    <http://your-org.com/ns/pact#evidence/vuln-test-002> a uco-obs:File ;
-        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dvuln-test-002"^^xsd:anyURI ;
-        uco-obs:fileName "log4j.properties" ;
-        uco-obs:owner "admin" .
-
-    pact:Control_AC3 a pact:Control ;
-        rdfs:label "NIST AC-3: Access Enforcement" .
-
-    pact:EmployeeOnboarding a pact:BusinessProcess ;
-        rdfs:label "Employee Onboarding" ;
-        rdfs:comment "Internal HR process for new hires." .
-
-    pact:PaymentProcessing a pact:BusinessProcess ;
-        rdfs:label "Credit Card Payment Processing" ;
-        rdfs:comment "Critical process for handling customer transactions." .
-
-    _:n5cacc089c4774e2ca52169a85c7006cbb5 a pact:ComplianceAssessment ;
-        rdfs:label "Check for vuln-test-002" ;
-        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/vuln-test-002> ;
-        pact:generatedAt "2025-12-15T16:06:41.520162"^^xsd:dateTime ;
+    _:N159748bbeade47b2b370ea59e06f0871 a pact:ComplianceAssessment ;
+        rdfs:label "Check for auto-01b91d6e" ;
+        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/auto-01b91d6e> ;
+        pact:generatedAt "2026-01-06T17:09:47.992888+00:00"^^xsd:dateTime ;
         pact:hasVerdict "PASS" ;
-        pact:validatesControl pact:Control_AC3 .
-}
-
-{
-    pact:CVE_2017_0144 a pact:Vulnerability ;
-        rdfs:label "CVE-2017-0144 (EternalBlue)" ;
-        rdfs:comment "SMB Remote Code Execution (WannaCry)." .
-
-    pact:CVE_2021_44228 a pact:Vulnerability ;
-        rdfs:label "CVE-2021-44228 (Log4Shell)" ;
-        rdfs:comment "Remote Code Execution in Log4j." .
-
-    pact:Telnet_Exposure a pact:Vulnerability ;
-        rdfs:label "CWE-200: Exposure of Sensitive Info (Telnet)" ;
-        rdfs:comment "Cleartext transmission of sensitive data via Telnet." .
-
-    pact:Control_CM7 pact:mitigates pact:CVE_2017_0144,
-            pact:Telnet_Exposure ;
-        pact:satisfiesRequirement "CIS Critical Control 12",
-            "ISO 27001 A.13.1.2",
-            "PCI-DSS 4.0 Req 1.3" .
-
-    pact:Control_AC3 pact:mitigates pact:CVE_2021_44228 ;
-        pact:satisfiesRequirement "ISO 27001 A.9.4.1",
-            "PCI-DSS 4.0 Req 7.1",
-            "SOC 2 CC6.1" .
-}
-
-<http://your-org.com/ns/pact/graph/2025-12-15T15:44:15.151694> {
-    <http://your-org.com/ns/pact#evidence/sim-event-1765831455141> a uco-obs:File ;
-        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dsim-event-1765831455141"^^xsd:anyURI ;
-        uco-obs:fileName "critical_secrets.yaml" ;
-        uco-obs:owner "root" .
-
-    pact:HRPortal a pact:System ;
-        rdfs:label "HR Employee Portal" ;
-        pact:hasComponent <http://your-org.com/ns/pact#evidence/sim-event-1765831455141> ;
-        pact:ownedByTeam "CorpIT" ;
-        pact:supports pact:EmployeeOnboarding .
-
-    pact:PaymentGatewayCluster a pact:System ;
-        rdfs:label "Payment Gateway Prod" ;
-        pact:ownedByTeam "FinTech-Ops" ;
-        pact:supports pact:PaymentProcessing .
-
-    pact:Control_CM7 a pact:Control ;
-        rdfs:label "NIST CM-7: Least Functionality" .
-
-    pact:EmployeeOnboarding a pact:BusinessProcess ;
-        rdfs:label "Employee Onboarding" ;
-        rdfs:comment "Internal HR process for new hires." .
-
-    pact:PaymentProcessing a pact:BusinessProcess ;
-        rdfs:label "Credit Card Payment Processing" ;
-        rdfs:comment "Critical process for handling customer transactions." .
-
-    pact:Control_AC3 a pact:Control ;
-        rdfs:label "NIST AC-3: Access Enforcement" .
-
-    _:n5cacc089c4774e2ca52169a85c7006cbb11 a pact:ComplianceAssessment ;
-        rdfs:label "Check for sim-event-1765831455141" ;
-        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/sim-event-1765831455141> ;
-        pact:generatedAt "2025-12-15T15:44:15.151694"^^xsd:dateTime ;
-        pact:hasVerdict "FAIL" ;
-        pact:validatesControl pact:Control_AC3 .
+        pact:scanId "d1f2a09b-cfb2-417e-97de-1a729c884dd0" ;
+        pact:validatesControl pact:Control_IA2 .
 }
 
 <http://your-org.com/ns/pact/graph/2025-12-15T16:35:28.872209> {
@@ -212,6 +155,9 @@
     pact:Control_CM7 a pact:Control ;
         rdfs:label "NIST CM-7: Least Functionality" .
 
+    pact:Control_AC3 a pact:Control ;
+        rdfs:label "NIST AC-3: Access Enforcement" .
+
     pact:EmployeeOnboarding a pact:BusinessProcess ;
         rdfs:label "Employee Onboarding" ;
         rdfs:comment "Internal HR process for new hires." .
@@ -220,17 +166,14 @@
         rdfs:label "Credit Card Payment Processing" ;
         rdfs:comment "Critical process for handling customer transactions." .
 
-    pact:Control_AC3 a pact:Control ;
-        rdfs:label "NIST AC-3: Access Enforcement" .
-
-    _:n5cacc089c4774e2ca52169a85c7006cbb1 a pact:ComplianceAssessment ;
+    _:n0e5dfc70c0ac4a78a9a30da9a51c9a0fb5 a pact:ComplianceAssessment ;
         rdfs:label "Check for evt-002" ;
         pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/evt-002> ;
         pact:generatedAt "2025-12-15T16:35:28.872209"^^xsd:dateTime ;
         pact:hasVerdict "FAIL" ;
         pact:validatesControl pact:Control_CM7 .
 
-    _:n5cacc089c4774e2ca52169a85c7006cbb2 a pact:ComplianceAssessment ;
+    _:n0e5dfc70c0ac4a78a9a30da9a51c9a0fb6 a pact:ComplianceAssessment ;
         rdfs:label "Check for evt-001" ;
         pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/evt-001> ;
         pact:generatedAt "2025-12-15T16:35:28.872209"^^xsd:dateTime ;
@@ -238,31 +181,28 @@
         pact:validatesControl pact:Control_AC3 .
 }
 
-<http://your-org.com/ns/pact/graph/2023-10-02T12:00:00> {
+<http://your-org.com/ns/pact/graph/2025-12-15T16:14:16.587683> {
     pact:HRPortal a pact:System ;
         rdfs:label "HR Employee Portal" ;
-        pact:hasComponent <http://your-org.com/ns/pact#evidence/evt-001> ;
+        pact:hasComponent <http://your-org.com/ns/pact#evidence/gemara-test-001> ;
         pact:ownedByTeam "CorpIT" ;
         pact:supports pact:EmployeeOnboarding .
 
     pact:PaymentGatewayCluster a pact:System ;
         rdfs:label "Payment Gateway Prod" ;
-        pact:hasComponent <http://your-org.com/ns/pact#evidence/evt-002> ;
         pact:ownedByTeam "FinTech-Ops" ;
         pact:supports pact:PaymentProcessing .
 
-    <http://your-org.com/ns/pact#evidence/evt-001> a uco-obs:File ;
-        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Devt-001"^^xsd:anyURI ;
-        uco-obs:fileName "sensitive_config.yaml" ;
-        uco-obs:owner "root" .
-
-    <http://your-org.com/ns/pact#evidence/evt-002> a uco-obs:NetworkConnection ;
-        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Devt-002"^^xsd:anyURI ;
-        uco-obs:destinationPort 23 ;
-        uco-obs:protocol "tcp" .
-
     pact:Control_CM7 a pact:Control ;
         rdfs:label "NIST CM-7: Least Functionality" .
+
+    <http://your-org.com/ns/pact#evidence/gemara-test-001> a uco-obs:File ;
+        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dgemara-test-001"^^xsd:anyURI ;
+        uco-obs:fileName "gemara_test_config.yaml" ;
+        uco-obs:owner "root" .
+
+    pact:Control_AC3 a pact:Control ;
+        rdfs:label "NIST AC-3: Access Enforcement" .
 
     pact:EmployeeOnboarding a pact:BusinessProcess ;
         rdfs:label "Employee Onboarding" ;
@@ -272,37 +212,182 @@
         rdfs:label "Credit Card Payment Processing" ;
         rdfs:comment "Critical process for handling customer transactions." .
 
+    _:n0e5dfc70c0ac4a78a9a30da9a51c9a0fb13 a pact:ComplianceAssessment ;
+        rdfs:label "Check for gemara-test-001" ;
+        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/gemara-test-001> ;
+        pact:generatedAt "2025-12-15T16:14:16.587683"^^xsd:dateTime ;
+        pact:hasVerdict "FAIL" ;
+        pact:validatesControl pact:Control_AC3 .
+}
+
+<http://your-org.com/ns/pact/graph/2025-12-19T13:12:09.075152> {
+    pact:HRPortal a pact:System ;
+        rdfs:label "HR Employee Portal" ;
+        pact:hasComponent <http://your-org.com/ns/pact#evidence/gemara-test-001> ;
+        pact:ownedByTeam "CorpIT" ;
+        pact:supports pact:EmployeeOnboarding .
+
+    pact:PaymentGatewayCluster a pact:System ;
+        rdfs:label "Payment Gateway Prod" ;
+        pact:ownedByTeam "FinTech-Ops" ;
+        pact:supports pact:PaymentProcessing .
+
+    pact:Control_CM7 a pact:Control ;
+        rdfs:label "NIST CM-7: Least Functionality" ;
+        rdfs:comment "Configure the system to provide only essential capabilities and prohibit or restrict the use of non-essential functions, ports, protocols, and services." .
+
+    <http://your-org.com/ns/pact#evidence/gemara-test-001> a uco-obs:File ;
+        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dgemara-test-001"^^xsd:anyURI ;
+        uco-obs:fileName "gemara_test_config.yaml" ;
+        uco-obs:owner "root" .
+
+    pact:Control_AC3 a pact:Control ;
+        rdfs:label "NIST AC-3: Access Enforcement" ;
+        rdfs:comment "Enforce approved authorizations for logical access to information and system resources in accordance with applicable access control policies." .
+
+    pact:EmployeeOnboarding a pact:BusinessProcess ;
+        rdfs:label "Employee Onboarding" ;
+        rdfs:comment "Internal HR process for new hires." .
+
+    pact:PaymentProcessing a pact:BusinessProcess ;
+        rdfs:label "Credit Card Payment Processing" ;
+        rdfs:comment "Critical process for handling customer transactions." .
+
+    _:n0e5dfc70c0ac4a78a9a30da9a51c9a0fb2 a pact:ComplianceAssessment ;
+        rdfs:label "Check for gemara-test-001" ;
+        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/gemara-test-001> ;
+        pact:generatedAt "2025-12-19T13:12:09.075152"^^xsd:dateTime ;
+        pact:hasVerdict "FAIL" ;
+        pact:validatesControl pact:Control_AC3 .
+}
+
+<http://your-org.com/ns/pact/graph/2025-12-15T16:58:22.445915> {
+    pact:HRPortal a pact:System ;
+        rdfs:label "HR Employee Portal" ;
+        pact:hasComponent <http://your-org.com/ns/pact#evidence/gemara-test-001> ;
+        pact:ownedByTeam "CorpIT" ;
+        pact:supports pact:EmployeeOnboarding .
+
+    pact:PaymentGatewayCluster a pact:System ;
+        rdfs:label "Payment Gateway Prod" ;
+        pact:ownedByTeam "FinTech-Ops" ;
+        pact:supports pact:PaymentProcessing .
+
+    pact:Control_CM7 a pact:Control ;
+        rdfs:label "NIST CM-7: Least Functionality" .
+
+    <http://your-org.com/ns/pact#evidence/gemara-test-001> a uco-obs:File ;
+        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dgemara-test-001"^^xsd:anyURI ;
+        uco-obs:fileName "gemara_test_config.yaml" ;
+        uco-obs:owner "root" .
+
     pact:Control_AC3 a pact:Control ;
         rdfs:label "NIST AC-3: Access Enforcement" .
 
-    _:n5cacc089c4774e2ca52169a85c7006cbb3 a pact:ComplianceAssessment ;
-        rdfs:label "Check for evt-002" ;
-        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/evt-002> ;
-        pact:generatedAt "2023-10-02T12:00:00"^^xsd:dateTime ;
-        pact:hasVerdict "FAIL" ;
-        pact:validatesControl pact:Control_CM7 .
+    pact:EmployeeOnboarding a pact:BusinessProcess ;
+        rdfs:label "Employee Onboarding" ;
+        rdfs:comment "Internal HR process for new hires." .
 
-    _:n5cacc089c4774e2ca52169a85c7006cbb4 a pact:ComplianceAssessment ;
-        rdfs:label "Check for evt-001" ;
-        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/evt-001> ;
-        pact:generatedAt "2023-10-02T12:00:00"^^xsd:dateTime ;
+    pact:PaymentProcessing a pact:BusinessProcess ;
+        rdfs:label "Credit Card Payment Processing" ;
+        rdfs:comment "Critical process for handling customer transactions." .
+
+    _:n0e5dfc70c0ac4a78a9a30da9a51c9a0fb15 a pact:ComplianceAssessment ;
+        rdfs:label "Check for gemara-test-001" ;
+        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/gemara-test-001> ;
+        pact:generatedAt "2025-12-15T16:58:22.445915"^^xsd:dateTime ;
+        pact:hasVerdict "FAIL" ;
+        pact:validatesControl pact:Control_AC3 .
+}
+
+<http://your-org.com/ns/pact/scan/5d6de9de-1c76-4461-96e8-c3b46487a918> {
+    pact:PaymentGateway a pact:System ;
+        rdfs:label "PaymentGateway" ;
+        pact:hasComponent <http://your-org.com/ns/pact#evidence/auto-815ad7e6> .
+
+    <http://your-org.com/ns/pact#evidence/auto-815ad7e6> a uco-obs:NetworkConnection ;
+        pact:eventId "auto-815ad7e6" ;
+        pact:eventType "network_connection" ;
+        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search+id%3Dauto-815ad7e6"^^xsd:anyURI ;
+        uco-obs:destinationAddress "192.168.1.100" ;
+        uco-obs:destinationPort 23 ;
+        uco-obs:protocol "TCP" .
+
+    pact:HRPortal a pact:System ;
+        rdfs:label "HR Employee Portal" ;
+        pact:ownedByTeam "CorpIT" ;
+        pact:supports pact:EmployeeOnboarding .
+
+    pact:PaymentGatewayCluster a pact:System ;
+        rdfs:label "Payment Gateway Prod" ;
+        pact:ownedByTeam "FinTech-Ops" ;
+        pact:supports pact:PaymentProcessing .
+
+    pact:Control_CM7 a pact:Control ;
+        rdfs:label "NIST CM-7: Least Functionality" ;
+        rdfs:comment "Configure the system to provide only essential capabilities and prohibit or restrict the use of non-essential functions, ports, protocols, and services." .
+
+    pact:Control_AC3 a pact:Control ;
+        rdfs:label "NIST AC-3: Access Enforcement" ;
+        rdfs:comment "Enforce approved authorizations for logical access to information and system resources in accordance with applicable access control policies." .
+
+    pact:EmployeeOnboarding a pact:BusinessProcess ;
+        rdfs:label "Employee Onboarding" ;
+        rdfs:comment "Internal HR process for new hires." .
+
+    pact:PaymentProcessing a pact:BusinessProcess ;
+        rdfs:label "Credit Card Payment Processing" ;
+        rdfs:comment "Critical process for handling customer transactions." .
+
+    _:N480b8f4812094d989f93757e537543d9 a pact:ComplianceAssessment ;
+        rdfs:label "Check for auto-815ad7e6" ;
+        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/auto-815ad7e6> ;
+        pact:generatedAt "2026-01-06T17:09:47.966248+00:00"^^xsd:dateTime ;
+        pact:hasVerdict "FAIL" ;
+        pact:scanId "5d6de9de-1c76-4461-96e8-c3b46487a918" ;
+        pact:validatesControl pact:Control_CM7 .
+}
+
+<http://your-org.com/ns/pact/graph/2025-12-15T17:00:59.791353> {
+    pact:HRPortal a pact:System ;
+        rdfs:label "HR Employee Portal" ;
+        pact:hasComponent <http://your-org.com/ns/pact#evidence/gemara-test-001> ;
+        pact:ownedByTeam "CorpIT" ;
+        pact:supports pact:EmployeeOnboarding .
+
+    pact:PaymentGatewayCluster a pact:System ;
+        rdfs:label "Payment Gateway Prod" ;
+        pact:ownedByTeam "FinTech-Ops" ;
+        pact:supports pact:PaymentProcessing .
+
+    pact:Control_CM7 a pact:Control ;
+        rdfs:label "NIST CM-7: Least Functionality" .
+
+    <http://your-org.com/ns/pact#evidence/gemara-test-001> a uco-obs:File ;
+        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dgemara-test-001"^^xsd:anyURI ;
+        uco-obs:fileName "gemara_test_config.yaml" ;
+        uco-obs:owner "root" .
+
+    pact:Control_AC3 a pact:Control ;
+        rdfs:label "NIST AC-3: Access Enforcement" .
+
+    pact:EmployeeOnboarding a pact:BusinessProcess ;
+        rdfs:label "Employee Onboarding" ;
+        rdfs:comment "Internal HR process for new hires." .
+
+    pact:PaymentProcessing a pact:BusinessProcess ;
+        rdfs:label "Credit Card Payment Processing" ;
+        rdfs:comment "Critical process for handling customer transactions." .
+
+    _:n0e5dfc70c0ac4a78a9a30da9a51c9a0fb1 a pact:ComplianceAssessment ;
+        rdfs:label "Check for gemara-test-001" ;
+        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/gemara-test-001> ;
+        pact:generatedAt "2025-12-15T17:00:59.791353"^^xsd:dateTime ;
         pact:hasVerdict "FAIL" ;
         pact:validatesControl pact:Control_AC3 .
 }
 
 <http://your-org.com/ns/pact/graph/2023-10-01T12:00:00> {
-    pact:HRPortal a pact:System ;
-        rdfs:label "HR Employee Portal" ;
-        pact:hasComponent <http://your-org.com/ns/pact#evidence/evt-001> ;
-        pact:ownedByTeam "CorpIT" ;
-        pact:supports pact:EmployeeOnboarding .
-
-    pact:PaymentGatewayCluster a pact:System ;
-        rdfs:label "Payment Gateway Prod" ;
-        pact:hasComponent <http://your-org.com/ns/pact#evidence/evt-002> ;
-        pact:ownedByTeam "FinTech-Ops" ;
-        pact:supports pact:PaymentProcessing .
-
     <http://your-org.com/ns/pact#evidence/evt-001> a uco-obs:File ;
         pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Devt-001"^^xsd:anyURI ;
         uco-obs:fileName "sensitive_config.yaml" ;
@@ -313,8 +398,23 @@
         uco-obs:destinationPort 443 ;
         uco-obs:protocol "tcp" .
 
+    pact:HRPortal a pact:System ;
+        rdfs:label "HR Employee Portal" ;
+        pact:hasComponent <http://your-org.com/ns/pact#evidence/evt-001> ;
+        pact:ownedByTeam "CorpIT" ;
+        pact:supports pact:EmployeeOnboarding .
+
+    pact:PaymentGatewayCluster a pact:System ;
+        rdfs:label "Payment Gateway Prod" ;
+        pact:hasComponent <http://your-org.com/ns/pact#evidence/evt-002> ;
+        pact:ownedByTeam "FinTech-Ops" ;
+        pact:supports pact:PaymentProcessing .
+
     pact:Control_CM7 a pact:Control ;
         rdfs:label "NIST CM-7: Least Functionality" .
+
+    pact:Control_AC3 a pact:Control ;
+        rdfs:label "NIST AC-3: Access Enforcement" .
 
     pact:EmployeeOnboarding a pact:BusinessProcess ;
         rdfs:label "Employee Onboarding" ;
@@ -324,20 +424,153 @@
         rdfs:label "Credit Card Payment Processing" ;
         rdfs:comment "Critical process for handling customer transactions." .
 
-    pact:Control_AC3 a pact:Control ;
-        rdfs:label "NIST AC-3: Access Enforcement" .
+    _:n0e5dfc70c0ac4a78a9a30da9a51c9a0fb10 a pact:ComplianceAssessment ;
+        rdfs:label "Check for evt-001" ;
+        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/evt-001> ;
+        pact:generatedAt "2023-10-01T12:00:00"^^xsd:dateTime ;
+        pact:hasVerdict "PASS" ;
+        pact:validatesControl pact:Control_AC3 .
 
-    _:n5cacc089c4774e2ca52169a85c7006cbb8 a pact:ComplianceAssessment ;
+    _:n0e5dfc70c0ac4a78a9a30da9a51c9a0fb9 a pact:ComplianceAssessment ;
         rdfs:label "Check for evt-002" ;
         pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/evt-002> ;
         pact:generatedAt "2023-10-01T12:00:00"^^xsd:dateTime ;
         pact:hasVerdict "PASS" ;
         pact:validatesControl pact:Control_CM7 .
+}
 
-    _:n5cacc089c4774e2ca52169a85c7006cbb9 a pact:ComplianceAssessment ;
+<http://your-org.com/ns/pact/graph/2023-10-02T12:00:00> {
+    <http://your-org.com/ns/pact#evidence/evt-001> a uco-obs:File ;
+        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Devt-001"^^xsd:anyURI ;
+        uco-obs:fileName "sensitive_config.yaml" ;
+        uco-obs:owner "root" .
+
+    <http://your-org.com/ns/pact#evidence/evt-002> a uco-obs:NetworkConnection ;
+        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Devt-002"^^xsd:anyURI ;
+        uco-obs:destinationPort 23 ;
+        uco-obs:protocol "tcp" .
+
+    pact:HRPortal a pact:System ;
+        rdfs:label "HR Employee Portal" ;
+        pact:hasComponent <http://your-org.com/ns/pact#evidence/evt-001> ;
+        pact:ownedByTeam "CorpIT" ;
+        pact:supports pact:EmployeeOnboarding .
+
+    pact:PaymentGatewayCluster a pact:System ;
+        rdfs:label "Payment Gateway Prod" ;
+        pact:hasComponent <http://your-org.com/ns/pact#evidence/evt-002> ;
+        pact:ownedByTeam "FinTech-Ops" ;
+        pact:supports pact:PaymentProcessing .
+
+    pact:Control_CM7 a pact:Control ;
+        rdfs:label "NIST CM-7: Least Functionality" .
+
+    pact:Control_AC3 a pact:Control ;
+        rdfs:label "NIST AC-3: Access Enforcement" .
+
+    pact:EmployeeOnboarding a pact:BusinessProcess ;
+        rdfs:label "Employee Onboarding" ;
+        rdfs:comment "Internal HR process for new hires." .
+
+    pact:PaymentProcessing a pact:BusinessProcess ;
+        rdfs:label "Credit Card Payment Processing" ;
+        rdfs:comment "Critical process for handling customer transactions." .
+
+    _:n0e5dfc70c0ac4a78a9a30da9a51c9a0fb7 a pact:ComplianceAssessment ;
+        rdfs:label "Check for evt-002" ;
+        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/evt-002> ;
+        pact:generatedAt "2023-10-02T12:00:00"^^xsd:dateTime ;
+        pact:hasVerdict "FAIL" ;
+        pact:validatesControl pact:Control_CM7 .
+
+    _:n0e5dfc70c0ac4a78a9a30da9a51c9a0fb8 a pact:ComplianceAssessment ;
         rdfs:label "Check for evt-001" ;
         pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/evt-001> ;
-        pact:generatedAt "2023-10-01T12:00:00"^^xsd:dateTime ;
+        pact:generatedAt "2023-10-02T12:00:00"^^xsd:dateTime ;
+        pact:hasVerdict "FAIL" ;
+        pact:validatesControl pact:Control_AC3 .
+}
+
+<http://your-org.com/ns/pact/scan/572f7efb-1f34-4edd-bc7c-b3675bdf9a26> {
+    <http://your-org.com/ns/pact#evidence/auto-b2ff7b3f> a uco-obs:File ;
+        pact:eventId "auto-b2ff7b3f" ;
+        pact:eventType "file_access" ;
+        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search+id%3Dauto-b2ff7b3f"^^xsd:anyURI ;
+        uco-obs:fileName "sensitive_config.yaml" ;
+        uco-obs:filePath "/etc/config" ;
+        uco-obs:owner "www-data" .
+
+    pact:HRPortal a pact:System ;
+        rdfs:label "HR Employee Portal" ;
+        pact:hasComponent <http://your-org.com/ns/pact#evidence/auto-b2ff7b3f> ;
+        pact:ownedByTeam "CorpIT" ;
+        pact:supports pact:EmployeeOnboarding .
+
+    pact:PaymentGatewayCluster a pact:System ;
+        rdfs:label "Payment Gateway Prod" ;
+        pact:ownedByTeam "FinTech-Ops" ;
+        pact:supports pact:PaymentProcessing .
+
+    pact:Control_CM7 a pact:Control ;
+        rdfs:label "NIST CM-7: Least Functionality" ;
+        rdfs:comment "Configure the system to provide only essential capabilities and prohibit or restrict the use of non-essential functions, ports, protocols, and services." .
+
+    pact:Control_AC3 a pact:Control ;
+        rdfs:label "NIST AC-3: Access Enforcement" ;
+        rdfs:comment "Enforce approved authorizations for logical access to information and system resources in accordance with applicable access control policies." .
+
+    pact:EmployeeOnboarding a pact:BusinessProcess ;
+        rdfs:label "Employee Onboarding" ;
+        rdfs:comment "Internal HR process for new hires." .
+
+    pact:PaymentProcessing a pact:BusinessProcess ;
+        rdfs:label "Credit Card Payment Processing" ;
+        rdfs:comment "Critical process for handling customer transactions." .
+
+    _:Na4776f79e1c7474daf463e2ff9f85a8d a pact:ComplianceAssessment ;
+        rdfs:label "Check for auto-b2ff7b3f" ;
+        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/auto-b2ff7b3f> ;
+        pact:generatedAt "2026-01-06T17:09:47.929802+00:00"^^xsd:dateTime ;
+        pact:hasVerdict "PASS" ;
+        pact:scanId "572f7efb-1f34-4edd-bc7c-b3675bdf9a26" ;
+        pact:validatesControl pact:Control_AC3 .
+}
+
+<http://your-org.com/ns/pact/graph/2025-12-15T16:06:41.520162> {
+    <http://your-org.com/ns/pact#evidence/vuln-test-002> a uco-obs:File ;
+        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dvuln-test-002"^^xsd:anyURI ;
+        uco-obs:fileName "log4j.properties" ;
+        uco-obs:owner "admin" .
+
+    pact:HRPortal a pact:System ;
+        rdfs:label "HR Employee Portal" ;
+        pact:hasComponent <http://your-org.com/ns/pact#evidence/vuln-test-002> ;
+        pact:ownedByTeam "CorpIT" ;
+        pact:supports pact:EmployeeOnboarding .
+
+    pact:PaymentGatewayCluster a pact:System ;
+        rdfs:label "Payment Gateway Prod" ;
+        pact:ownedByTeam "FinTech-Ops" ;
+        pact:supports pact:PaymentProcessing .
+
+    pact:Control_CM7 a pact:Control ;
+        rdfs:label "NIST CM-7: Least Functionality" .
+
+    pact:Control_AC3 a pact:Control ;
+        rdfs:label "NIST AC-3: Access Enforcement" .
+
+    pact:EmployeeOnboarding a pact:BusinessProcess ;
+        rdfs:label "Employee Onboarding" ;
+        rdfs:comment "Internal HR process for new hires." .
+
+    pact:PaymentProcessing a pact:BusinessProcess ;
+        rdfs:label "Credit Card Payment Processing" ;
+        rdfs:comment "Critical process for handling customer transactions." .
+
+    _:n0e5dfc70c0ac4a78a9a30da9a51c9a0fb3 a pact:ComplianceAssessment ;
+        rdfs:label "Check for vuln-test-002" ;
+        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/vuln-test-002> ;
+        pact:generatedAt "2025-12-15T16:06:41.520162"^^xsd:dateTime ;
         pact:hasVerdict "PASS" ;
         pact:validatesControl pact:Control_AC3 .
 }
@@ -362,6 +595,9 @@
     pact:Control_CM7 a pact:Control ;
         rdfs:label "NIST CM-7: Least Functionality" .
 
+    pact:Control_AC3 a pact:Control ;
+        rdfs:label "NIST AC-3: Access Enforcement" .
+
     pact:EmployeeOnboarding a pact:BusinessProcess ;
         rdfs:label "Employee Onboarding" ;
         rdfs:comment "Internal HR process for new hires." .
@@ -370,170 +606,11 @@
         rdfs:label "Credit Card Payment Processing" ;
         rdfs:comment "Critical process for handling customer transactions." .
 
-    pact:Control_AC3 a pact:Control ;
-        rdfs:label "NIST AC-3: Access Enforcement" .
-
-    _:n5cacc089c4774e2ca52169a85c7006cbb10 a pact:ComplianceAssessment ;
+    _:n0e5dfc70c0ac4a78a9a30da9a51c9a0fb11 a pact:ComplianceAssessment ;
         rdfs:label "Check for vuln-test-001" ;
         pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/vuln-test-001> ;
         pact:generatedAt "2025-12-15T16:06:15.249900"^^xsd:dateTime ;
         pact:hasVerdict "PASS" ;
-        pact:validatesControl pact:Control_AC3 .
-}
-
-<http://your-org.com/ns/pact/graph/2025-12-15T15:41:15.329131> {
-    <http://your-org.com/ns/pact#evidence/api-test-001> a uco-obs:File ;
-        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dapi-test-001"^^xsd:anyURI ;
-        uco-obs:fileName "prod_db_config.xml" ;
-        uco-obs:owner "root" .
-
-    pact:HRPortal a pact:System ;
-        rdfs:label "HR Employee Portal" ;
-        pact:hasComponent <http://your-org.com/ns/pact#evidence/api-test-001> ;
-        pact:ownedByTeam "CorpIT" ;
-        pact:supports pact:EmployeeOnboarding .
-
-    pact:PaymentGatewayCluster a pact:System ;
-        rdfs:label "Payment Gateway Prod" ;
-        pact:ownedByTeam "FinTech-Ops" ;
-        pact:supports pact:PaymentProcessing .
-
-    pact:Control_CM7 a pact:Control ;
-        rdfs:label "NIST CM-7: Least Functionality" .
-
-    pact:EmployeeOnboarding a pact:BusinessProcess ;
-        rdfs:label "Employee Onboarding" ;
-        rdfs:comment "Internal HR process for new hires." .
-
-    pact:PaymentProcessing a pact:BusinessProcess ;
-        rdfs:label "Credit Card Payment Processing" ;
-        rdfs:comment "Critical process for handling customer transactions." .
-
-    pact:Control_AC3 a pact:Control ;
-        rdfs:label "NIST AC-3: Access Enforcement" .
-
-    _:n5cacc089c4774e2ca52169a85c7006cbb13 a pact:ComplianceAssessment ;
-        rdfs:label "Check for api-test-001" ;
-        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/api-test-001> ;
-        pact:generatedAt "2025-12-15T15:41:15.329131"^^xsd:dateTime ;
-        pact:hasVerdict "FAIL" ;
-        pact:validatesControl pact:Control_AC3 .
-}
-
-<http://your-org.com/ns/pact/graph/2025-12-15T16:14:16.587683> {
-    <http://your-org.com/ns/pact#evidence/gemara-test-001> a uco-obs:File ;
-        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dgemara-test-001"^^xsd:anyURI ;
-        uco-obs:fileName "gemara_test_config.yaml" ;
-        uco-obs:owner "root" .
-
-    pact:HRPortal a pact:System ;
-        rdfs:label "HR Employee Portal" ;
-        pact:hasComponent <http://your-org.com/ns/pact#evidence/gemara-test-001> ;
-        pact:ownedByTeam "CorpIT" ;
-        pact:supports pact:EmployeeOnboarding .
-
-    pact:PaymentGatewayCluster a pact:System ;
-        rdfs:label "Payment Gateway Prod" ;
-        pact:ownedByTeam "FinTech-Ops" ;
-        pact:supports pact:PaymentProcessing .
-
-    pact:Control_CM7 a pact:Control ;
-        rdfs:label "NIST CM-7: Least Functionality" .
-
-    pact:EmployeeOnboarding a pact:BusinessProcess ;
-        rdfs:label "Employee Onboarding" ;
-        rdfs:comment "Internal HR process for new hires." .
-
-    pact:PaymentProcessing a pact:BusinessProcess ;
-        rdfs:label "Credit Card Payment Processing" ;
-        rdfs:comment "Critical process for handling customer transactions." .
-
-    pact:Control_AC3 a pact:Control ;
-        rdfs:label "NIST AC-3: Access Enforcement" .
-
-    _:n5cacc089c4774e2ca52169a85c7006cbb15 a pact:ComplianceAssessment ;
-        rdfs:label "Check for gemara-test-001" ;
-        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/gemara-test-001> ;
-        pact:generatedAt "2025-12-15T16:14:16.587683"^^xsd:dateTime ;
-        pact:hasVerdict "FAIL" ;
-        pact:validatesControl pact:Control_AC3 .
-}
-
-<http://your-org.com/ns/pact/graph/2025-12-15T16:14:35.937314> {
-    pact:HRPortal a pact:System ;
-        rdfs:label "HR Employee Portal" ;
-        pact:hasComponent <http://your-org.com/ns/pact#evidence/gemara-test-001> ;
-        pact:ownedByTeam "CorpIT" ;
-        pact:supports pact:EmployeeOnboarding .
-
-    pact:PaymentGatewayCluster a pact:System ;
-        rdfs:label "Payment Gateway Prod" ;
-        pact:ownedByTeam "FinTech-Ops" ;
-        pact:supports pact:PaymentProcessing .
-
-    <http://your-org.com/ns/pact#evidence/gemara-test-001> a uco-obs:File ;
-        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dgemara-test-001"^^xsd:anyURI ;
-        uco-obs:fileName "gemara_test_config.yaml" ;
-        uco-obs:owner "root" .
-
-    pact:Control_CM7 a pact:Control ;
-        rdfs:label "NIST CM-7: Least Functionality" .
-
-    pact:EmployeeOnboarding a pact:BusinessProcess ;
-        rdfs:label "Employee Onboarding" ;
-        rdfs:comment "Internal HR process for new hires." .
-
-    pact:PaymentProcessing a pact:BusinessProcess ;
-        rdfs:label "Credit Card Payment Processing" ;
-        rdfs:comment "Critical process for handling customer transactions." .
-
-    pact:Control_AC3 a pact:Control ;
-        rdfs:label "NIST AC-3: Access Enforcement" .
-
-    _:n5cacc089c4774e2ca52169a85c7006cbb12 a pact:ComplianceAssessment ;
-        rdfs:label "Check for gemara-test-001" ;
-        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/gemara-test-001> ;
-        pact:generatedAt "2025-12-15T16:14:35.937314"^^xsd:dateTime ;
-        pact:hasVerdict "FAIL" ;
-        pact:validatesControl pact:Control_AC3 .
-}
-
-<http://your-org.com/ns/pact/graph/2025-12-15T16:58:22.445915> {
-    pact:HRPortal a pact:System ;
-        rdfs:label "HR Employee Portal" ;
-        pact:hasComponent <http://your-org.com/ns/pact#evidence/gemara-test-001> ;
-        pact:ownedByTeam "CorpIT" ;
-        pact:supports pact:EmployeeOnboarding .
-
-    pact:PaymentGatewayCluster a pact:System ;
-        rdfs:label "Payment Gateway Prod" ;
-        pact:ownedByTeam "FinTech-Ops" ;
-        pact:supports pact:PaymentProcessing .
-
-    <http://your-org.com/ns/pact#evidence/gemara-test-001> a uco-obs:File ;
-        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dgemara-test-001"^^xsd:anyURI ;
-        uco-obs:fileName "gemara_test_config.yaml" ;
-        uco-obs:owner "root" .
-
-    pact:Control_CM7 a pact:Control ;
-        rdfs:label "NIST CM-7: Least Functionality" .
-
-    pact:EmployeeOnboarding a pact:BusinessProcess ;
-        rdfs:label "Employee Onboarding" ;
-        rdfs:comment "Internal HR process for new hires." .
-
-    pact:PaymentProcessing a pact:BusinessProcess ;
-        rdfs:label "Credit Card Payment Processing" ;
-        rdfs:comment "Critical process for handling customer transactions." .
-
-    pact:Control_AC3 a pact:Control ;
-        rdfs:label "NIST AC-3: Access Enforcement" .
-
-    _:n5cacc089c4774e2ca52169a85c7006cbb6 a pact:ComplianceAssessment ;
-        rdfs:label "Check for gemara-test-001" ;
-        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/gemara-test-001> ;
-        pact:generatedAt "2025-12-15T16:58:22.445915"^^xsd:dateTime ;
-        pact:hasVerdict "FAIL" ;
         pact:validatesControl pact:Control_AC3 .
 }
 
@@ -557,6 +634,9 @@
     pact:Control_CM7 a pact:Control ;
         rdfs:label "NIST CM-7: Least Functionality" .
 
+    pact:Control_AC3 a pact:Control ;
+        rdfs:label "NIST AC-3: Access Enforcement" .
+
     pact:EmployeeOnboarding a pact:BusinessProcess ;
         rdfs:label "Employee Onboarding" ;
         rdfs:comment "Internal HR process for new hires." .
@@ -565,14 +645,75 @@
         rdfs:label "Credit Card Payment Processing" ;
         rdfs:comment "Critical process for handling customer transactions." .
 
-    pact:Control_AC3 a pact:Control ;
-        rdfs:label "NIST AC-3: Access Enforcement" .
-
-    _:n5cacc089c4774e2ca52169a85c7006cbb7 a pact:ComplianceAssessment ;
+    _:n0e5dfc70c0ac4a78a9a30da9a51c9a0fb16 a pact:ComplianceAssessment ;
         rdfs:label "Check for sim-event-1765833773621" ;
         pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/sim-event-1765833773621> ;
         pact:generatedAt "2025-12-15T16:22:53.666671"^^xsd:dateTime ;
         pact:hasVerdict "FAIL" ;
         pact:validatesControl pact:Control_AC3 .
+}
+
+<http://your-org.com/ns/pact/graph/2025-12-15T15:41:15.329131> {
+    <http://your-org.com/ns/pact#evidence/api-test-001> a uco-obs:File ;
+        pact:evidenceSourceUrl "https://splunk.your-org.com/en-US/app/search/search?q=search%20id%3Dapi-test-001"^^xsd:anyURI ;
+        uco-obs:fileName "prod_db_config.xml" ;
+        uco-obs:owner "root" .
+
+    pact:HRPortal a pact:System ;
+        rdfs:label "HR Employee Portal" ;
+        pact:hasComponent <http://your-org.com/ns/pact#evidence/api-test-001> ;
+        pact:ownedByTeam "CorpIT" ;
+        pact:supports pact:EmployeeOnboarding .
+
+    pact:PaymentGatewayCluster a pact:System ;
+        rdfs:label "Payment Gateway Prod" ;
+        pact:ownedByTeam "FinTech-Ops" ;
+        pact:supports pact:PaymentProcessing .
+
+    pact:Control_CM7 a pact:Control ;
+        rdfs:label "NIST CM-7: Least Functionality" .
+
+    pact:Control_AC3 a pact:Control ;
+        rdfs:label "NIST AC-3: Access Enforcement" .
+
+    pact:EmployeeOnboarding a pact:BusinessProcess ;
+        rdfs:label "Employee Onboarding" ;
+        rdfs:comment "Internal HR process for new hires." .
+
+    pact:PaymentProcessing a pact:BusinessProcess ;
+        rdfs:label "Credit Card Payment Processing" ;
+        rdfs:comment "Critical process for handling customer transactions." .
+
+    _:n0e5dfc70c0ac4a78a9a30da9a51c9a0fb12 a pact:ComplianceAssessment ;
+        rdfs:label "Check for api-test-001" ;
+        pact:evaluatedEvidence <http://your-org.com/ns/pact#evidence/api-test-001> ;
+        pact:generatedAt "2025-12-15T15:41:15.329131"^^xsd:dateTime ;
+        pact:hasVerdict "FAIL" ;
+        pact:validatesControl pact:Control_AC3 .
+}
+
+{
+    pact:CVE_2017_0144 a pact:Vulnerability ;
+        rdfs:label "CVE-2017-0144 (EternalBlue)" ;
+        rdfs:comment "SMB Remote Code Execution (WannaCry)." .
+
+    pact:CVE_2021_44228 a pact:Vulnerability ;
+        rdfs:label "CVE-2021-44228 (Log4Shell)" ;
+        rdfs:comment "Remote Code Execution in Log4j." .
+
+    pact:Telnet_Exposure a pact:Vulnerability ;
+        rdfs:label "CWE-200: Exposure of Sensitive Info (Telnet)" ;
+        rdfs:comment "Cleartext transmission of sensitive data via Telnet." .
+
+    pact:Control_CM7 pact:mitigates pact:CVE_2017_0144,
+            pact:Telnet_Exposure ;
+        pact:satisfiesRequirement "CIS Critical Control 12",
+            "ISO 27001 A.13.1.2",
+            "PCI-DSS 4.0 Req 1.3" .
+
+    pact:Control_AC3 pact:mitigates pact:CVE_2021_44228 ;
+        pact:satisfiesRequirement "ISO 27001 A.9.4.1",
+            "PCI-DSS 4.0 Req 7.1",
+            "SOC 2 CC6.1" .
 }
 
