@@ -175,8 +175,11 @@ echo "Demo data loaded!"
 
 - [ ] Dashboard loads at http://localhost:8002/visualize
 - [ ] Can login with admin@pact.io
-- [ ] Blast Radius table shows entries
-- [ ] Drift table shows entries (or will after demo events)
+- [ ] Dashboard shows Critical Failures table with entries
+- [ ] Click "Blast Radius" in sidebar → visual diagram renders
+- [ ] Click "Config Drift" in sidebar → timeline + detail cards render
+- [ ] Drift cards show WHAT/WHEN/WHO/WHY details
+- [ ] "Ask AI" button on drift cards works
 - [ ] AI Auditor responds to questions
 
 ### Test the AI Auditor

@@ -86,18 +86,36 @@ Use the filter bar to narrow down results:
 
 ### Blast Radius Analysis
 
-The Blast Radius view shows the impact of compliance failures across your organization.
+The Blast Radius view shows the impact of compliance failures across your organization with both a **visual diagram** and detailed table.
 
-#### Understanding the Table
+#### Visual Impact Diagram
+
+The Blast Radius page displays an interactive Mermaid flowchart showing how failures propagate:
+
+```
+Event → System → Business Process → Compliance Frameworks
+```
+
+**Color Legend:**
+- 🚨 **Red nodes** - Violation events (the triggering failures)
+- 🖥️ **Blue nodes** - Affected information systems
+- ⚙️ **Purple nodes** - Impacted business processes
+- 📋 **Green nodes** - Compliance frameworks at risk
+
+This visualization helps you quickly understand the "blast radius" of a single violation—how one misconfigured file can impact multiple business processes and frameworks.
+
+#### Understanding the Details Table
+
+Below the diagram, the details table provides specifics for each failure:
 
 | Column | Description |
 |--------|-------------|
 | **Date** | When the failure was detected |
-| **Process** | Business process affected |
+| **Asset** | Specific file, port, or resource involved |
 | **System** | IT system with the failure |
+| **Process** | Business process affected |
 | **Control** | Primary control that failed (e.g., NIST AC-3) |
 | **Frameworks** | All frameworks impacted by this failure |
-| **Asset** | Specific file, port, or resource involved |
 
 #### Reading a Finding
 
@@ -133,7 +151,7 @@ This ensures you don't miss compliance gaps in any framework.
 
 ## Configuration Drift Detection
 
-Drift detection identifies systems that were previously compliant but have now failed.
+Drift detection identifies systems that were previously compliant but have now failed—and explains **who** caused it and **why**.
 
 ### Understanding Drift
 
@@ -142,22 +160,45 @@ Drift detection identifies systems that were previously compliant but have now f
 | **PASS → FAIL** | System was compliant, now failing (critical) |
 | **FAIL → PASS** | System was failing, now remediated (good) |
 
-### Drift Table Columns
+### Visual Timeline
 
-| Column | Description |
-|--------|-------------|
-| **System** | The affected system |
-| **Control** | The control that changed |
-| **Asset** | File or configuration that changed |
-| **Pass Date** | When it was last compliant |
-| **Fail Date** | When it started failing |
+The Config Drift page displays a Mermaid timeline diagram showing:
+
+```
+System → PASS (date) → Actor → FAIL (date)
+```
+
+**Color Legend:**
+- 🟢 **Green nodes** - PASS states (compliant)
+- 🔴 **Red nodes** - FAIL states (non-compliant)
+- 🔵 **Blue nodes** - Actor who caused the change
+
+### Detail Cards
+
+Each drift event is displayed as an expandable card with full context:
+
+| Field | Description |
+|-------|-------------|
+| **WHAT** | Asset and control that changed (e.g., "File ownership changed") |
+| **WHEN** | Timeline: "Passed Jan 5 10:00 AM → Failed Jan 6 3:30 PM" |
+| **WHO** | The actor/user who caused the drift (from event data) |
+| **WHY** | SHACL validation message explaining the violation |
+| **PATH** | Full file path (if available) |
+
+### Actions
+
+Each drift card includes:
+- **View Source** → Link to the original log (Splunk, CloudTrail, etc.)
+- **Ask AI** → Pre-fills the AI Auditor with a question about this specific drift
 
 ### Responding to Drift
 
-1. Investigate the root cause
-2. Check if a change was authorized
-3. Create an incident if unauthorized
-4. Remediate or document exception
+1. Review the detail card to understand WHAT/WHEN/WHO/WHY
+2. Click "View Source" to see the raw event
+3. Determine if the change was authorized
+4. Click "Ask AI" to get remediation recommendations
+5. Create an incident if unauthorized
+6. Remediate or document exception
 
 ---
 

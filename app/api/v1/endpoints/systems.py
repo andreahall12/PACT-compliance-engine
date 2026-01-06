@@ -112,7 +112,13 @@ async def list_systems(
     offset = (page - 1) * per_page
     query = (
         query
-        .options(selectinload(System.owner_team), selectinload(System.owner_user))
+        .options(
+            selectinload(System.owner_team),
+            selectinload(System.owner_user),
+            selectinload(System.business_processes),
+            selectinload(System.products),
+            selectinload(System.frameworks),
+        )
         .offset(offset)
         .limit(per_page)
         .order_by(System.display_name)

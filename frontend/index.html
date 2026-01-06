@@ -16,6 +16,9 @@
     <!-- Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
+    
+    <!-- Mermaid Diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 
     <style>
         :root {
@@ -1210,22 +1213,111 @@
                 </div>
             </div>
 
-            <!-- Placeholder pages -->
+            <!-- Blast Radius Page -->
             <div id="page-blast-radius" class="page">
                 <header class="header">
                     <h1 class="header-title">Blast Radius Analysis</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" onclick="loadBlastRadius()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
                 </header>
                 <div class="content-area">
-                    <p class="text-muted">Detailed blast radius analysis - see Dashboard for overview.</p>
+                    <!-- Legend -->
+                    <div class="card" style="margin-bottom: 20px;">
+                        <div class="card-header">
+                            <span><i class="fas fa-info-circle"></i> How to Read This Diagram</span>
+                        </div>
+                        <div style="padding: 16px; display: flex; gap: 24px; flex-wrap: wrap; font-size: 13px;">
+                            <div><span style="color: #f87171;">●</span> <strong>Violation Event</strong> - The triggering compliance failure</div>
+                            <div><span style="color: #60a5fa;">●</span> <strong>System</strong> - Affected information system</div>
+                            <div><span style="color: #a78bfa;">●</span> <strong>Business Process</strong> - Impacted business operation</div>
+                            <div><span style="color: #34d399;">●</span> <strong>Framework</strong> - Compliance frameworks affected</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Mermaid Diagram -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span><i class="fas fa-project-diagram"></i> Impact Visualization</span>
+                            <span class="status-badge info" id="blast-event-count">0 events</span>
+                        </div>
+                        <div id="blast-diagram-container" style="padding: 24px; min-height: 400px; overflow-x: auto; background: var(--bg-dark);">
+                            <div class="loading"><span></span><span></span><span></span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Summary Table -->
+                    <div class="card" style="margin-top: 20px;">
+                        <div class="card-header">
+                            <span><i class="fas fa-list"></i> Failure Details</span>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Asset</th>
+                                    <th>System</th>
+                                    <th>Process</th>
+                                    <th>Control</th>
+                                    <th>Impacted Frameworks</th>
+                                </tr>
+                            </thead>
+                            <tbody id="blast-details-table">
+                                <tr><td colspan="6" class="text-muted" style="text-align: center;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             
+            <!-- Config Drift Page -->
             <div id="page-drift" class="page">
                 <header class="header">
                     <h1 class="header-title">Configuration Drift</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" onclick="loadDrift()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
                 </header>
                 <div class="content-area">
-                    <p class="text-muted">Configuration drift detection - see Dashboard for overview.</p>
+                    <!-- Legend -->
+                    <div class="card" style="margin-bottom: 20px;">
+                        <div class="card-header">
+                            <span><i class="fas fa-info-circle"></i> Understanding Drift</span>
+                        </div>
+                        <div style="padding: 16px; font-size: 13px; line-height: 1.6;">
+                            <p style="margin: 0 0 8px 0;"><strong>Configuration drift</strong> occurs when a system that was previously compliant becomes non-compliant. This timeline shows:</p>
+                            <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-top: 12px;">
+                                <div><span style="color: #34d399;">●</span> <strong>PASS</strong> - System was compliant</div>
+                                <div><span style="color: #f87171;">●</span> <strong>FAIL</strong> - System drifted to non-compliant</div>
+                                <div><span style="color: #60a5fa;">●</span> <strong>Actor</strong> - User/process that caused the drift</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Timeline Diagram -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span><i class="fas fa-clock"></i> Drift Timeline</span>
+                            <span class="status-badge warning" id="drift-event-count">0 drifts</span>
+                        </div>
+                        <div id="drift-diagram-container" style="padding: 24px; min-height: 300px; overflow-x: auto; background: var(--bg-dark);">
+                            <div class="loading"><span></span><span></span><span></span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Detail Cards -->
+                    <div class="card" style="margin-top: 20px;">
+                        <div class="card-header">
+                            <span><i class="fas fa-exclamation-triangle"></i> Drift Details</span>
+                        </div>
+                        <div id="drift-cards-container" style="padding: 16px;">
+                            <div class="loading"><span></span><span></span><span></span></div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -1631,13 +1723,11 @@
                 headers.set('Authorization', `Bearer ${accessToken}`);
             }
             headers.set('Content-Type', 'application/json');
-            
             const res = await fetch(`${API_URL}${path}`, {
                 ...options,
                 headers,
                 credentials: 'include'
             });
-            
             if (res.status === 401) {
                 // Try to refresh token
                 const refreshed = await tryRefreshToken();
@@ -1735,6 +1825,12 @@
             switch (pageId) {
                 case 'dashboard':
                     loadDashboard();
+                    break;
+                case 'blast-radius':
+                    loadBlastRadius();
+                    break;
+                case 'drift':
+                    loadDrift();
                     break;
                 case 'systems':
                     loadSystems();
@@ -1848,12 +1944,442 @@
         }
         
         // =================================================================
+        // Blast Radius Visualization
+        // =================================================================
+        let blastRadiusMermaidInitialized = false;
+        
+        async function loadBlastRadius() {
+            const container = document.getElementById('blast-diagram-container');
+            const tbody = document.getElementById('blast-details-table');
+            const countBadge = document.getElementById('blast-event-count');
+            
+            container.innerHTML = '<div class="loading"><span></span><span></span><span></span></div>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align: center;">Loading...</td></tr>';
+            
+            try {
+                const res = await apiFetch('/compliance/blast-radius');
+                if (!res.ok) {
+                    container.innerHTML = '<p class="text-muted" style="text-align: center; padding: 40px;">Failed to load blast radius data</p>';
+                    return;
+                }
+                
+                const data = await res.json();
+                countBadge.textContent = `${data.length} events`;
+                
+                if (data.length === 0) {
+                    container.innerHTML = '<p class="text-muted" style="text-align: center; padding: 40px;"><i class="fas fa-check-circle" style="color: var(--success); margin-right: 8px;"></i>No compliance failures detected</p>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align: center;">All systems compliant</td></tr>';
+                    return;
+                }
+                
+                // Generate Mermaid diagram
+                const mermaidCode = generateBlastMermaid(data);
+                renderMermaidDiagram(container, mermaidCode);
+                
+                // Render details table
+                renderBlastDetailsTable(data);
+                
+            } catch (e) {
+                console.error('Failed to load blast radius:', e);
+                container.innerHTML = '<p class="text-muted" style="text-align: center; padding: 40px;">Error loading data</p>';
+            }
+        }
+        
+        function generateBlastMermaid(data) {
+            // Group by unique combinations to reduce diagram complexity
+            const systems = new Map();
+            const processes = new Map();
+            const frameworks = new Set();
+            const events = [];
+            
+            data.slice(0, 10).forEach((item, idx) => {
+                const eventId = `event_${idx}`;
+                const systemId = `sys_${item.system.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                const processId = `proc_${item.process.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                
+                events.push({
+                    id: eventId,
+                    label: item.asset.length > 20 ? item.asset.substring(0, 20) + '...' : item.asset,
+                    systemId: systemId
+                });
+                
+                systems.set(systemId, item.system);
+                processes.set(processId, { name: item.process, systemId: systemId });
+                
+                // Parse frameworks
+                if (item.impacted_frameworks && item.impacted_frameworks !== 'None') {
+                    item.impacted_frameworks.split(',').forEach(fw => {
+                        const trimmed = fw.trim();
+                        if (trimmed) {
+                            frameworks.add({ id: `fw_${trimmed.replace(/[^a-zA-Z0-9]/g, '_')}`, name: trimmed, processId: processId });
+                        }
+                    });
+                }
+            });
+            
+            // Build Mermaid flowchart
+            let mermaid = 'flowchart LR\n';
+            mermaid += '    %% Styling\n';
+            mermaid += '    classDef event fill:#7f1d1d,stroke:#f87171,color:#fecaca\n';
+            mermaid += '    classDef system fill:#1e3a5f,stroke:#60a5fa,color:#bfdbfe\n';
+            mermaid += '    classDef process fill:#3b1f5e,stroke:#a78bfa,color:#ddd6fe\n';
+            mermaid += '    classDef framework fill:#064e3b,stroke:#34d399,color:#a7f3d0\n\n';
+            
+            // Add event nodes
+            events.forEach(e => {
+                mermaid += `    ${e.id}["🚨 ${e.label}"]\n`;
+            });
+            
+            // Add system nodes
+            systems.forEach((name, id) => {
+                mermaid += `    ${id}["🖥️ ${name}"]\n`;
+            });
+            
+            // Add process nodes
+            processes.forEach((proc, id) => {
+                mermaid += `    ${id}["⚙️ ${proc.name}"]\n`;
+            });
+            
+            // Add framework nodes (deduplicated)
+            const uniqueFrameworks = new Map();
+            frameworks.forEach(fw => {
+                if (!uniqueFrameworks.has(fw.id)) {
+                    uniqueFrameworks.set(fw.id, fw);
+                }
+            });
+            uniqueFrameworks.forEach((fw, id) => {
+                const shortName = fw.name.length > 15 ? fw.name.substring(0, 15) + '...' : fw.name;
+                mermaid += `    ${id}["📋 ${shortName}"]\n`;
+            });
+            
+            mermaid += '\n';
+            
+            // Add edges: Event -> System
+            events.forEach(e => {
+                mermaid += `    ${e.id} --> ${e.systemId}\n`;
+            });
+            
+            // Add edges: System -> Process
+            processes.forEach((proc, id) => {
+                mermaid += `    ${proc.systemId} --> ${id}\n`;
+            });
+            
+            // Add edges: Process -> Framework
+            frameworks.forEach(fw => {
+                mermaid += `    ${fw.processId} --> ${fw.id}\n`;
+            });
+            
+            mermaid += '\n';
+            
+            // Apply classes
+            events.forEach(e => { mermaid += `    class ${e.id} event\n`; });
+            systems.forEach((_, id) => { mermaid += `    class ${id} system\n`; });
+            processes.forEach((_, id) => { mermaid += `    class ${id} process\n`; });
+            uniqueFrameworks.forEach((_, id) => { mermaid += `    class ${id} framework\n`; });
+            
+            return mermaid;
+        }
+        
+        async function renderMermaidDiagram(container, code) {
+            try {
+                // Initialize Mermaid if needed
+                if (!blastRadiusMermaidInitialized) {
+                    mermaid.initialize({
+                        startOnLoad: false,
+                        theme: 'dark',
+                        themeVariables: {
+                            darkMode: true,
+                            background: '#0a0e14',
+                            primaryColor: '#1e3a5f',
+                            primaryTextColor: '#e2e8f0',
+                            primaryBorderColor: '#60a5fa',
+                            lineColor: '#475569',
+                            secondaryColor: '#3b1f5e',
+                            tertiaryColor: '#064e3b'
+                        },
+                        flowchart: {
+                            curve: 'basis',
+                            padding: 20
+                        }
+                    });
+                    blastRadiusMermaidInitialized = true;
+                }
+                
+                // Render the diagram
+                const { svg } = await mermaid.render('blast-mermaid-' + Date.now(), code);
+                container.innerHTML = svg;
+                
+                // Style the SVG
+                const svgEl = container.querySelector('svg');
+                if (svgEl) {
+                    svgEl.style.maxWidth = '100%';
+                    svgEl.style.height = 'auto';
+                    svgEl.style.minHeight = '300px';
+                }
+            } catch (e) {
+                console.error('Mermaid render error:', e);
+                container.innerHTML = `<pre style="color: var(--text-muted); padding: 20px; overflow: auto; font-size: 12px;">${escapeHtml(code)}</pre>`;
+            }
+        }
+        
+        function renderBlastDetailsTable(data) {
+            const tbody = document.getElementById('blast-details-table');
+            
+            tbody.innerHTML = data.map(row => `
+                <tr>
+                    <td class="text-muted text-mono" style="font-size: 12px;">${formatDate(row.timestamp)}</td>
+                    <td><code class="text-mono text-danger">${escapeHtml(row.asset)}</code></td>
+                    <td>${escapeHtml(row.system)}</td>
+                    <td>${escapeHtml(row.process)}</td>
+                    <td><span class="status-badge info">${escapeHtml((row.control || '').split(':')[0])}</span></td>
+                    <td style="font-size: 12px;">${escapeHtml(row.impacted_frameworks || 'None')}</td>
+                </tr>
+            `).join('');
+        }
+        
+        // =================================================================
+        // Config Drift Visualization
+        // =================================================================
+        let driftMermaidInitialized = false;
+        let driftData = [];
+        
+        async function loadDrift() {
+            const container = document.getElementById('drift-diagram-container');
+            const cardsContainer = document.getElementById('drift-cards-container');
+            const countBadge = document.getElementById('drift-event-count');
+            
+            container.innerHTML = '<div class="loading"><span></span><span></span><span></span></div>';
+            cardsContainer.innerHTML = '<div class="loading"><span></span><span></span><span></span></div>';
+            
+            try {
+                const res = await apiFetch('/compliance/drift');
+                if (!res.ok) {
+                    container.innerHTML = '<p class="text-muted" style="text-align: center; padding: 40px;">Failed to load drift data</p>';
+                    cardsContainer.innerHTML = '';
+                    return;
+                }
+                
+                const data = await res.json();
+                driftData = data;
+                countBadge.textContent = `${data.length} drift${data.length !== 1 ? 's' : ''}`;
+                
+                if (data.length === 0) {
+                    container.innerHTML = '<p class="text-muted" style="text-align: center; padding: 40px;"><i class="fas fa-check-circle" style="color: var(--success); margin-right: 8px;"></i>No configuration drift detected - all systems stable</p>';
+                    cardsContainer.innerHTML = '<p class="text-muted" style="text-align: center; padding: 20px;">No drift events to display</p>';
+                    return;
+                }
+                
+                // Generate Mermaid timeline
+                const mermaidCode = generateDriftMermaid(data);
+                renderDriftMermaid(container, mermaidCode);
+                
+                // Render detail cards
+                renderDriftCards(data);
+                
+            } catch (e) {
+                console.error('Failed to load drift:', e);
+                container.innerHTML = '<p class="text-muted" style="text-align: center; padding: 40px;">Error loading data</p>';
+            }
+        }
+        
+        function generateDriftMermaid(data) {
+            // Build a timeline showing PASS -> FAIL transitions
+            let mermaid = 'flowchart LR\n';
+            mermaid += '    %% Styling\n';
+            mermaid += '    classDef pass fill:#064e3b,stroke:#34d399,color:#a7f3d0\n';
+            mermaid += '    classDef fail fill:#7f1d1d,stroke:#f87171,color:#fecaca\n';
+            mermaid += '    classDef actor fill:#1e3a5f,stroke:#60a5fa,color:#bfdbfe\n\n';
+            
+            // Limit to 8 items for readability
+            data.slice(0, 8).forEach((item, idx) => {
+                const systemId = `sys_${idx}`;
+                const passId = `pass_${idx}`;
+                const failId = `fail_${idx}`;
+                const actorId = `actor_${idx}`;
+                
+                const assetShort = item.asset.length > 15 ? item.asset.substring(0, 15) + '...' : item.asset;
+                const passDate = formatDateShort(item.previous_pass);
+                const failDate = formatDateShort(item.current_fail);
+                const actorName = item.actor || 'Unknown';
+                
+                // System label
+                mermaid += `    ${systemId}["${escapeHtml(item.system)}"]\n`;
+                // Pass state
+                mermaid += `    ${passId}["✓ PASS<br/>${passDate}"]\n`;
+                // Actor (if known)
+                if (item.actor) {
+                    mermaid += `    ${actorId}["👤 ${escapeHtml(actorName)}"]\n`;
+                }
+                // Fail state
+                mermaid += `    ${failId}["✗ FAIL<br/>${failDate}<br/>${escapeHtml(assetShort)}"]\n`;
+                
+                // Edges
+                mermaid += `    ${systemId} --> ${passId}\n`;
+                if (item.actor) {
+                    mermaid += `    ${passId} -->|"changed"| ${actorId}\n`;
+                    mermaid += `    ${actorId} --> ${failId}\n`;
+                } else {
+                    mermaid += `    ${passId} -->|"drifted"| ${failId}\n`;
+                }
+                
+                // Apply classes
+                mermaid += `    class ${passId} pass\n`;
+                mermaid += `    class ${failId} fail\n`;
+                if (item.actor) {
+                    mermaid += `    class ${actorId} actor\n`;
+                }
+                mermaid += '\n';
+            });
+            
+            return mermaid;
+        }
+        
+        async function renderDriftMermaid(container, code) {
+            try {
+                if (!driftMermaidInitialized) {
+                    mermaid.initialize({
+                        startOnLoad: false,
+                        theme: 'dark',
+                        themeVariables: {
+                            darkMode: true,
+                            background: '#0a0e14',
+                            primaryColor: '#1e3a5f',
+                            primaryTextColor: '#e2e8f0',
+                            primaryBorderColor: '#60a5fa',
+                            lineColor: '#475569'
+                        },
+                        flowchart: {
+                            curve: 'basis',
+                            padding: 20
+                        }
+                    });
+                    driftMermaidInitialized = true;
+                }
+                
+                const { svg } = await mermaid.render('drift-mermaid-' + Date.now(), code);
+                container.innerHTML = svg;
+                
+                const svgEl = container.querySelector('svg');
+                if (svgEl) {
+                    svgEl.style.maxWidth = '100%';
+                    svgEl.style.height = 'auto';
+                    svgEl.style.minHeight = '200px';
+                }
+            } catch (e) {
+                console.error('Drift Mermaid render error:', e);
+                container.innerHTML = `<pre style="color: var(--text-muted); padding: 20px; overflow: auto; font-size: 12px;">${escapeHtml(code)}</pre>`;
+            }
+        }
+        
+        function renderDriftCards(data) {
+            const container = document.getElementById('drift-cards-container');
+            
+            if (data.length === 0) {
+                container.innerHTML = '<p class="text-muted" style="text-align: center;">No drift events</p>';
+                return;
+            }
+            
+            container.innerHTML = data.map((item, idx) => {
+                const passDate = formatDate(item.previous_pass);
+                const failDate = formatDate(item.current_fail);
+                const actor = item.actor || 'Unknown';
+                const why = item.why || 'No SHACL message available';
+                const assetPath = item.asset_path || item.asset;
+                const eventType = item.event_type || 'unknown';
+                const control = item.control || 'Unknown Control';
+                
+                // Generate human-readable "what happened"
+                let whatHappened = '';
+                if (eventType === 'file_access') {
+                    whatHappened = `File <code>${escapeHtml(item.asset)}</code> ownership/permissions changed`;
+                } else if (eventType === 'network_connection') {
+                    whatHappened = `Network configuration changed on port`;
+                } else if (eventType === 'config_change') {
+                    whatHappened = `Configuration file <code>${escapeHtml(item.asset)}</code> was modified`;
+                } else {
+                    whatHappened = `Asset <code>${escapeHtml(item.asset)}</code> state changed`;
+                }
+                
+                return `
+                    <div class="drift-card" style="
+                        background: var(--bg-elevated);
+                        border: 1px solid var(--border);
+                        border-left: 4px solid var(--danger);
+                        border-radius: 8px;
+                        padding: 16px;
+                        margin-bottom: 16px;
+                    ">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                            <div>
+                                <span class="status-badge fail" style="margin-right: 8px;">DRIFT</span>
+                                <strong style="font-size: 16px;">${escapeHtml(item.system)}</strong>
+                                <span class="text-muted" style="margin-left: 8px;">— ${escapeHtml(item.asset)}</span>
+                            </div>
+                            <span class="status-badge info">${escapeHtml(control.split(':')[0])}</span>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 80px 1fr; gap: 8px 16px; font-size: 13px; margin-bottom: 16px;">
+                            <div class="text-muted"><strong>WHAT:</strong></div>
+                            <div>${whatHappened}</div>
+                            
+                            <div class="text-muted"><strong>WHEN:</strong></div>
+                            <div>
+                                <span style="color: var(--success);">✓ Passed:</span> ${passDate}<br>
+                                <span style="color: var(--danger);">✗ Failed:</span> ${failDate}
+                            </div>
+                            
+                            <div class="text-muted"><strong>WHO:</strong></div>
+                            <div>
+                                <span style="color: var(--primary);">👤 ${escapeHtml(actor)}</span>
+                            </div>
+                            
+                            <div class="text-muted"><strong>WHY:</strong></div>
+                            <div style="color: var(--danger);">${escapeHtml(why)}</div>
+                            
+                            ${assetPath ? `
+                            <div class="text-muted"><strong>PATH:</strong></div>
+                            <div><code class="text-mono" style="font-size: 11px;">${escapeHtml(assetPath)}</code></div>
+                            ` : ''}
+                        </div>
+                        
+                        <div style="display: flex; gap: 8px; border-top: 1px solid var(--border); padding-top: 12px;">
+                            <a href="${escapeHtml(item.link || '#')}" target="_blank" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-external-link-alt"></i> View Source
+                            </a>
+                            <button class="btn btn-secondary btn-sm" onclick="askAIAboutDrift(${idx})">
+                                <i class="fas fa-robot"></i> Ask AI
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function askAIAboutDrift(index) {
+            const item = driftData[index];
+            if (!item) return;
+            
+            const question = `Why did ${item.system} drift from compliant to non-compliant for ${item.asset}? The control that failed is ${item.control}.`;
+            
+            // Navigate to dashboard and open chat
+            navigateTo('dashboard');
+            
+            // Pre-fill chat input after a short delay
+            setTimeout(() => {
+                const chatInput = document.getElementById('chat-input');
+                if (chatInput) {
+                    chatInput.value = question;
+                    chatInput.focus();
+                }
+            }, 300);
+        }
+        
+        // =================================================================
         // Systems
         // =================================================================
         async function loadSystems() {
             const tbody = document.getElementById('systems-table-body');
             tbody.innerHTML = renderLoadingRow(7);
-            
             try {
                 const res = await apiFetch('/systems');
                 if (res.ok) {
@@ -2092,7 +2618,6 @@
                 "file": { "name": "secrets.yaml", "path": "/etc/secrets" },
                 "user": { "name": "root" }
             }];
-            
             try {
                 const res = await apiFetch('/ingest', {
                     method: 'POST',
@@ -2102,7 +2627,6 @@
                         target_frameworks: ["NIST AC-3"]
                     })
                 });
-                
                 if (res.ok) {
                     alert('Event ingested! Refreshing dashboard...');
                     setTimeout(loadDashboard, 500);

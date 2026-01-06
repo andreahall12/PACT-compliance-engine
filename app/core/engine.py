@@ -131,6 +131,10 @@ def map_event_to_rdf(
     system_name = event.get("system")
     system_uri = resolve_system_uri(data_graph, system_name, event_type)
     
+    # Extract actor information (explicit actor field takes precedence)
+    actor_info = event.get("actor", {})
+    actor_name = actor_info.get("name") if actor_info else None
+    
     # Map based on event type
     if event_type == "file_access":
         data_graph.add((evidence_node, RDF.type, UCO_OBS.File))
@@ -139,7 +143,12 @@ def map_event_to_rdf(
         if file_info.get("path"):
             data_graph.add((evidence_node, UCO_OBS.filePath, Literal(file_info["path"])))
         user_info = event.get("user", {})
-        data_graph.add((evidence_node, UCO_OBS.owner, Literal(user_info.get("name", "unknown"))))
+        owner_name = user_info.get("name", "unknown")
+        data_graph.add((evidence_node, UCO_OBS.owner, Literal(owner_name)))
+        # Store actor (use explicit actor, fallback to owner)
+        effective_actor = actor_name or owner_name
+        if effective_actor and effective_actor != "unknown":
+            data_graph.add((evidence_node, PACT.actorName, Literal(effective_actor)))
         
     elif event_type == "network_connection":
         data_graph.add((evidence_node, RDF.type, UCO_OBS.NetworkConnection))
@@ -148,19 +157,30 @@ def map_event_to_rdf(
         if dest.get("ip"):
             data_graph.add((evidence_node, UCO_OBS.destinationAddress, Literal(dest["ip"])))
         data_graph.add((evidence_node, UCO_OBS.protocol, Literal(event.get("protocol", "tcp"))))
+        # Store actor if provided
+        if actor_name:
+            data_graph.add((evidence_node, PACT.actorName, Literal(actor_name)))
         
     elif event_type == "authentication":
         data_graph.add((evidence_node, RDF.type, UCO_OBS.Account))
         data_graph.add((evidence_node, PACT.authResult, Literal(event.get("result", "unknown"))))
         data_graph.add((evidence_node, PACT.authMethod, Literal(event.get("method", "unknown"))))
         user_info = event.get("user", {})
-        data_graph.add((evidence_node, UCO_OBS.accountLogin, Literal(user_info.get("name", "unknown"))))
+        login_name = user_info.get("name", "unknown")
+        data_graph.add((evidence_node, UCO_OBS.accountLogin, Literal(login_name)))
+        # Store actor (use explicit actor, fallback to login name)
+        effective_actor = actor_name or login_name
+        if effective_actor and effective_actor != "unknown":
+            data_graph.add((evidence_node, PACT.actorName, Literal(effective_actor)))
         
     elif event_type == "api_call":
         data_graph.add((evidence_node, RDF.type, UCO_OBS.URL))
         data_graph.add((evidence_node, PACT.apiEndpoint, Literal(event.get("endpoint", ""))))
         data_graph.add((evidence_node, PACT.apiMethod, Literal(event.get("method", "GET"))))
         data_graph.add((evidence_node, PACT.apiStatus, Literal(event.get("status_code", 0), datatype=XSD.integer)))
+        # Store actor if provided
+        if actor_name:
+            data_graph.add((evidence_node, PACT.actorName, Literal(actor_name)))
         
     elif event_type == "config_change":
         data_graph.add((evidence_node, RDF.type, UCO_OBS.File))
@@ -168,7 +188,12 @@ def map_event_to_rdf(
         data_graph.add((evidence_node, PACT.configOldValue, Literal(str(event.get("old_value", "")))))
         data_graph.add((evidence_node, PACT.configNewValue, Literal(str(event.get("new_value", "")))))
         user_info = event.get("user", {})
-        data_graph.add((evidence_node, PACT.changedBy, Literal(user_info.get("name", "unknown"))))
+        changed_by = user_info.get("name", "unknown")
+        data_graph.add((evidence_node, PACT.changedBy, Literal(changed_by)))
+        # Store actor (use explicit actor, fallback to changedBy)
+        effective_actor = actor_name or changed_by
+        if effective_actor and effective_actor != "unknown":
+            data_graph.add((evidence_node, PACT.actorName, Literal(effective_actor)))
         
     else:
         # Generic event type
@@ -259,6 +284,17 @@ def run_assessment(
         inference='rdfs',
         debug=False
     )
+    
+    # Extract SHACL violation messages and attach to evidence nodes
+    # This enables the "why" explanation in drift detection
+    violation_messages = {}
+    for result in results_graph.subjects(RDF.type, SH.ValidationResult):
+        focus_node = results_graph.value(result, SH.focusNode)
+        message = results_graph.value(result, SH.resultMessage)
+        if focus_node and message:
+            # Store message on the evidence node for later querying
+            data_graph.add((focus_node, PACT.violationMessage, Literal(str(message))))
+            violation_messages[str(focus_node)] = str(message)
 
     # Generate Assessment Records
     timestamp_str = timestamp.isoformat()
@@ -269,11 +305,14 @@ def run_assessment(
         
         # Filter by framework if specified
         if target_frameworks:
-            control_name = str(target_control).split("#")[-1]
+            control_name = str(target_control).split("#")[-1]  # e.g., "Control_AC3"
+            # Normalize control name: Control_AC3 -> ac3
+            normalized_control = control_name.lower().replace("control_", "").replace("-", "").replace("_", "")
             # Check if any target framework matches this control
             is_targeted = any(
-                tf.lower() in control_name.lower() or 
-                control_name.lower() in tf.lower()
+                # Normalize framework: "NIST AC-3" -> "nistac3", "AC-3" -> "ac3"
+                normalized_control in tf.lower().replace("-", "").replace("_", "").replace(" ", "") or
+                tf.lower().replace("-", "").replace("_", "").replace(" ", "") in normalized_control
                 for tf in target_frameworks
             )
             if not is_targeted:
