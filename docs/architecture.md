@@ -536,8 +536,8 @@ flowchart TD
 | PATCH | `/v1/systems/{id}` | ✓ | Update system |
 | POST | `/v1/systems/{id}/deprecate` | ✓ | Deprecate system |
 | POST | `/v1/systems/{id}/archive` | ✓ | Archive system |
-| GET | `/v1/compliance/blast-radius` | ✓ | Get compliance failures |
-| GET | `/v1/compliance/drift` | ✓ | Get configuration drift |
+| GET | `/v1/compliance/blast-radius` | ✓ | Get compliance failures with impact visualization |
+| GET | `/v1/compliance/drift` | ✓ | Get config drift with WHO/WHAT/WHEN/WHY attribution |
 | GET | `/v1/compliance/stats` | ✓ | Get graph statistics |
 | GET | `/v1/compliance/threats` | ✓ | Get threat mitigations |
 | POST | `/v1/ingest` | ✓ | Ingest security events |

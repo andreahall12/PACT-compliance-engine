@@ -39,8 +39,8 @@ PACT is a compliance engine that turns raw security events into audit-grade, exp
 | Capability | What It Does |
 |------------|--------------|
 | **Real-time ingestion** | Events become findings instantly |
-| **Blast radius analysis** | One failure → see impact across frameworks |
-| **Drift detection** | Catch when compliant systems regress |
+| **Visual blast radius** | Interactive diagram: Event → System → Process → Frameworks |
+| **Drift detection + attribution** | WHO caused it, WHAT changed, WHEN, WHY (SHACL message) |
 | **AI explainability** | Ask questions in plain English |
 | **Evidence traceability** | Every finding links to proof |
 | **OSCAL export** | Audit-ready reports in standard format |

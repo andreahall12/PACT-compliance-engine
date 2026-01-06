@@ -143,9 +143,15 @@ Plain-English explanations of technical terms used in PACT and the compliance ec
 
 **What it is:** When a system that was previously compliant becomes non-compliant over time.
 
-**Why it matters:** Systems "rot" over time. Someone changes a setting, patches introduce regressions, or configurations get overwritten. Drift detection catches these changes.
+**Why it matters:** Systems "rot" over time. Someone changes a setting, patches introduce regressions, or configurations get overwritten. Drift detection catches these changes—and tells you WHO caused them.
 
-**Example:** The HR Portal passed all checks on Monday. On Wednesday, someone changed a file permission. PACT's drift detection shows "PASS → FAIL" with timestamps.
+**PACT shows four things for every drift event:**
+- **WHAT**: The asset and control that changed
+- **WHEN**: When it was passing vs. when it started failing
+- **WHO**: The actor/user who caused the change (from event data)
+- **WHY**: The actual SHACL violation message explaining the failure
+
+**Example:** The HR Portal passed NIST AC-3 on Monday. On Wednesday at 3:30 PM, `alice` changed file ownership to `root`. PACT's drift detection shows the timeline, the actor, and the SHACL message: "VIOLATION: File is owned by root user."
 
 ---
 
@@ -216,7 +222,8 @@ Plain-English explanations of technical terms used in PACT and the compliance ec
 | OSCAL | Standard compliance report format |
 | ComplyTime | Governance lifecycle home |
 | Blast Radius | Scope of impact from a failure |
-| Drift | Was compliant, now isn't |
+| Drift | Was compliant, now isn't + WHO/WHAT/WHEN/WHY |
+| Actor | The user/process that caused a change |
 | Cross-Walk | One failure affects multiple frameworks |
 
 ---
