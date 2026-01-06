@@ -24,7 +24,7 @@ This folder contains everything you need to demo PACT to your team.
 |---------|------|--------------|
 | Cold Open | 90s | Set the stage, show dashboard |
 | The Ecosystem | 3 min | Gemara → PACT → OSCAL → ComplyTime |
-| Live Demo | 6 min | Trigger failure, blast radius, drift, AI |
+| Live Demo | 6 min | Trigger failure, **visual blast radius**, **drift with WHO/WHAT/WHEN/WHY**, AI |
 | The Thesis | 2 min | Security = Compliance? |
 | Close | 90s | Discussion, next steps |
 
