@@ -5,28 +5,52 @@ from app.core.store import db
 
 router = APIRouter()
 
+# =============================================================================
+# Constants
+# =============================================================================
+
+SPARQL_PREFIXES = """
+PREFIX pact: <http://your-org.com/ns/pact#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX uco-obs: <https://ontology.unifiedcyberontology.org/uco/observable/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+"""
+
+DEFAULT_BLAST_LIMIT = 50
+DEFAULT_THREATS_LIMIT = 50
+
 _VULN_FILTER_RE = re.compile(r"^[A-Za-z0-9 _\\-\\.:/]{1,64}$")
+
+
+# =============================================================================
+# Helper Functions
+# =============================================================================
+
+def _run_query(query: str):
+    """Execute a SPARQL query with standard prefixes."""
+    return db.query(SPARQL_PREFIXES + query)
+
+
+def _rows_to_list(results, mapper):
+    """Convert SPARQL results to a list of dicts using a mapper function."""
+    return [mapper(row) for row in results]
 
 @router.get("/blast-radius")
 def get_blast_radius():
     """
     Returns high-impact failures linking Controls -> Evidence -> Systems -> Business Processes.
     """
-    query = """
-    PREFIX pact: <http://your-org.com/ns/pact#>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    PREFIX uco-obs: <https://ontology.unifiedcyberontology.org/uco/observable/>
-
+    query = f"""
     SELECT ?systemName ?controlName ?identifier ?processName ?deepLink ?verdict ?time (GROUP_CONCAT(?mappedReq; separator=", ") AS ?impactedFrameworks)
-    WHERE {
-        GRAPH ?g {
+    WHERE {{
+        GRAPH ?g {{
             ?assessment pact:hasVerdict "FAIL" ;
                         pact:validatesControl ?control ;
                         pact:evaluatedEvidence ?ev ;
                         pact:generatedAt ?time .
             
             ?ev pact:evidenceSourceUrl ?deepLink .
-            { ?ev uco-obs:fileName ?identifier } UNION { ?ev uco-obs:destinationPort ?identifier }
+            {{ ?ev uco-obs:fileName ?identifier }} UNION {{ ?ev uco-obs:destinationPort ?identifier }}
             
             ?system pact:hasComponent ?ev ;
                     rdfs:label ?systemName ;
@@ -34,18 +58,16 @@ def get_blast_radius():
                     
             ?process rdfs:label ?processName .
             ?control rdfs:label ?controlName .
-        }
-        OPTIONAL { ?control pact:satisfiesRequirement ?mappedReq . }
-    }
+        }}
+        OPTIONAL {{ ?control pact:satisfiesRequirement ?mappedReq . }}
+    }}
     GROUP BY ?systemName ?controlName ?identifier ?processName ?deepLink ?verdict ?time
     ORDER BY DESC(?time)
-    LIMIT 50
+    LIMIT {DEFAULT_BLAST_LIMIT}
     """
-    results = db.query(query)
     
-    output = []
-    for row in results:
-        output.append({
+    def mapper(row):
+        return {
             "process": str(row.processName),
             "system": str(row.systemName),
             "control": str(row.controlName),
@@ -53,9 +75,9 @@ def get_blast_radius():
             "timestamp": str(row.time),
             "link": str(row.deepLink),
             "impacted_frameworks": str(row.impactedFrameworks) if row.impactedFrameworks else "None"
-        })
-        
-    return output
+        }
+    
+    return _rows_to_list(_run_query(query), mapper)
 
 @router.get("/drift")
 def get_drift():
@@ -63,11 +85,6 @@ def get_drift():
     Identifies assets that have drifted from PASS to FAIL status.
     """
     query = """
-    PREFIX pact: <http://your-org.com/ns/pact#>
-    PREFIX uco-obs: <https://ontology.unifiedcyberontology.org/uco/observable/>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-
     SELECT ?systemName ?controlName ?identifier ?time1 ?time2 ?deepLink
     WHERE {
         GRAPH ?g2 {
@@ -92,19 +109,18 @@ def get_drift():
     }
     ORDER BY DESC(?time2)
     """
-    results = db.query(query)
     
-    output = []
-    for row in results:
-        output.append({
+    def mapper(row):
+        return {
             "system": str(row.systemName),
             "control": str(row.controlName),
             "asset": str(row.identifier),
             "previous_pass": str(row.time1),
             "current_fail": str(row.time2),
             "link": str(row.deepLink)
-        })
-    return output
+        }
+    
+    return _rows_to_list(_run_query(query), mapper)
 
 @router.get("/threats")
 def check_threat_mitigation(vulnerability: str = None):
@@ -112,17 +128,14 @@ def check_threat_mitigation(vulnerability: str = None):
     Checks if specific vulnerabilities are mitigated by active controls.
     """
     if not vulnerability:
-        sparql = """
-        PREFIX pact: <http://your-org.com/ns/pact#>
-        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-        
+        query = f"""
         SELECT ?vulnName ?controlName ?systemName ?verdict
-        WHERE {
+        WHERE {{
             ?control pact:mitigates ?vuln .
             ?vuln rdfs:label ?vulnName .
             ?control rdfs:label ?controlName .
             
-            GRAPH ?g {
+            GRAPH ?g {{
                 ?assess pact:validatesControl ?control ;
                         pact:hasVerdict ?verdict ;
                         pact:evaluatedEvidence ?ev ;
@@ -130,10 +143,10 @@ def check_threat_mitigation(vulnerability: str = None):
                         
                 ?system pact:hasComponent ?ev ;
                         rdfs:label ?systemName .
-            }
-        }
+            }}
+        }}
         ORDER BY DESC(?time)
-        LIMIT 50
+        LIMIT {DEFAULT_THREATS_LIMIT}
         """
     else:
         if not _VULN_FILTER_RE.fullmatch(vulnerability):
@@ -144,10 +157,7 @@ def check_threat_mitigation(vulnerability: str = None):
 
         # Escape for embedding in a SPARQL string literal.
         safe_vuln = vulnerability.replace("\\", "\\\\").replace('"', '\\"')
-        sparql = f"""
-        PREFIX pact: <http://your-org.com/ns/pact#>
-        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-        
+        query = f"""
         SELECT ?vulnName ?controlName ?systemName ?verdict
         WHERE {{
             ?control pact:mitigates ?vuln .
@@ -168,17 +178,16 @@ def check_threat_mitigation(vulnerability: str = None):
         }}
         ORDER BY DESC(?time)
         """
-        
-    results = db.query(sparql)
-    output = []
-    for row in results:
-        output.append({
+    
+    def mapper(row):
+        return {
             "vulnerability": str(row.vulnName),
             "mitigating_control": str(row.controlName),
             "system": str(row.systemName),
             "status": str(row.verdict)
-        })
-    return output
+        }
+    
+    return _rows_to_list(_run_query(query), mapper)
 
 @router.get("/stats")
 def stats():

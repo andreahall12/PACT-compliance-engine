@@ -27,9 +27,9 @@ from app.schemas.system import (
     SystemUpdate,
     SystemResponse,
     SystemDetailResponse,
-    SystemListResponse,
     SystemDeprecateRequest,
 )
+from app.schemas.common import PaginatedResponse
 
 router = APIRouter()
 
@@ -53,7 +53,7 @@ def can_access_system(user: User, system: System) -> bool:
     return False
 
 
-@router.get("", response_model=SystemListResponse)
+@router.get("", response_model=PaginatedResponse[SystemResponse])
 async def list_systems(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -143,14 +143,11 @@ async def list_systems(
         for s in systems
     ]
     
-    pages = (total + per_page - 1) // per_page if per_page > 0 else 0
-    
-    return SystemListResponse(
+    return PaginatedResponse.create(
         items=items,
         total=total,
         page=page,
         per_page=per_page,
-        pages=pages,
     )
 
 
@@ -318,10 +315,14 @@ async def update_system(
     current_user: User = Depends(require_permission("systems.update")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Update a system."""
-    result = await db.execute(
-        select(System).where(System.system_id == system_id, System.deleted_at.is_(None))
-    )
+    """Update a system (supports both numeric DB id and string system_id)."""
+    # Support both numeric DB ID and string system_id
+    if system_id.isdigit():
+        query = select(System).where(System.id == int(system_id), System.deleted_at.is_(None))
+    else:
+        query = select(System).where(System.system_id == system_id, System.deleted_at.is_(None))
+    
+    result = await db.execute(query)
     system = result.scalar_one_or_none()
     
     if not system:
@@ -401,10 +402,14 @@ async def deprecate_system(
     current_user: User = Depends(require_permission("systems.update")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Mark a system as deprecated."""
-    result = await db.execute(
-        select(System).where(System.system_id == system_id, System.deleted_at.is_(None))
-    )
+    """Mark a system as deprecated (supports both numeric DB id and string system_id)."""
+    # Support both numeric DB ID and string system_id
+    if system_id.isdigit():
+        query = select(System).where(System.id == int(system_id), System.deleted_at.is_(None))
+    else:
+        query = select(System).where(System.system_id == system_id, System.deleted_at.is_(None))
+    
+    result = await db.execute(query)
     system = result.scalar_one_or_none()
     
     if not system:
@@ -468,10 +473,14 @@ async def archive_system(
     current_user: User = Depends(require_permission("systems.delete")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Archive a system (soft delete with preservation)."""
-    result = await db.execute(
-        select(System).where(System.system_id == system_id, System.deleted_at.is_(None))
-    )
+    """Archive a system (supports both numeric DB id and string system_id)."""
+    # Support both numeric DB ID and string system_id
+    if system_id.isdigit():
+        query = select(System).where(System.id == int(system_id), System.deleted_at.is_(None))
+    else:
+        query = select(System).where(System.system_id == system_id, System.deleted_at.is_(None))
+    
+    result = await db.execute(query)
     system = result.scalar_one_or_none()
     
     if not system:

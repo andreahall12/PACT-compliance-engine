@@ -16,6 +16,15 @@ from app.api.v1.endpoints import (
     documents,
     incidents,
     history,
+    export,
+    catalog,
+    scans,
+    policies,
+    vendors,
+    sbom,
+    notifications,
+    websocket,
+    schedules,
 )
 
 api_router = APIRouter()
@@ -81,4 +90,67 @@ api_router.include_router(
     history.router,
     prefix="/history",
     tags=["history"]
+)
+
+# Export (OSCAL, POA&M)
+api_router.include_router(
+    export.router,
+    prefix="/export",
+    tags=["export"]
+)
+
+# Catalog (dynamic filter data)
+api_router.include_router(
+    catalog.router,
+    prefix="/catalog",
+    tags=["catalog"]
+)
+
+# Scans history
+api_router.include_router(
+    scans.router,
+    prefix="/scans",
+    tags=["scans"]
+)
+
+# Policy management
+api_router.include_router(
+    policies.router,
+    prefix="/policies",
+    tags=["policies"]
+)
+
+# Vendor risk management
+api_router.include_router(
+    vendors.router,
+    prefix="/vendors",
+    tags=["vendors"]
+)
+
+# SBOM management
+api_router.include_router(
+    sbom.router,
+    prefix="/sbom",
+    tags=["sbom"]
+)
+
+# Notifications and webhooks
+api_router.include_router(
+    notifications.router,
+    prefix="/notifications",
+    tags=["notifications"]
+)
+
+# WebSocket for real-time updates
+api_router.include_router(
+    websocket.router,
+    prefix="/realtime",
+    tags=["realtime"]
+)
+
+# Scheduled jobs
+api_router.include_router(
+    schedules.router,
+    prefix="/schedules",
+    tags=["schedules"]
 )

@@ -19,8 +19,8 @@ For testing and demonstration purposes, the following accounts are pre-configure
 
 | Role | Email | Password |
 |------|-------|----------|
-| **Admin** | `admin@pact.io` | `admin123` |
-| **Compliance Officer** | `compliance.officer@pact.io` | `compliance123` |
+| **Admin** | `admin@pact.io` | `Admin@123!` |
+| **Compliance Officer** | `compliance.officer@pact.io` | `Compliance@123!` |
 | **Security Engineer** | `security@pact.io` | `Security@123!` |
 | **Developer** | `developer@pact.io` | `Developer@123!` |
 | **System Owner** | `sysowner@pact.io` | `SysOwner@123!` |
@@ -234,6 +234,17 @@ PACT exposes a RESTful API at `/v1/`. Key endpoints:
 | **Ingest** | `POST /v1/ingest` | Ingest security events |
 
 Full API documentation available at [http://localhost:8002/docs](http://localhost:8002/docs)
+
+---
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [User Guide](docs/user-guide.md) | How to use PACT for compliance monitoring |
+| [Administrator Guide](docs/administrator-guide.md) | Installation, configuration, and maintenance |
+| [Architecture](docs/architecture.md) | Technical architecture and data flows |
+| [API Reference](http://localhost:8002/docs) | Interactive Swagger documentation |
 
 ---
 
