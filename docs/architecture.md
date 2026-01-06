@@ -15,6 +15,8 @@ This document describes the technical architecture of **PACT** (Policy Automatio
 7. [API Reference](#7-api-reference)
 8. [Real-Time Updates](#8-real-time-updates)
 9. [Technology Stack](#9-technology-stack)
+10. [Optional Integrations](#10-optional-integrations)
+11. [Demo Scope and Limitations](#11-demo-scope-and-limitations)
 
 ---
 
@@ -481,37 +483,37 @@ classDiagram
 ```mermaid
 flowchart TD
     subgraph Auth [Authentication]
-        Login[POST /auth/login]
-        Refresh[POST /auth/refresh]
-        Logout[POST /auth/logout]
+        Login[POST /v1/auth/login]
+        Refresh[POST /v1/auth/refresh]
+        Logout[POST /v1/auth/logout]
     end
     
     subgraph Resources [Resource Management]
-        Users[/users]
-        Systems[/systems]
-        Documents[/documents]
-        Incidents[/incidents]
-        Policies[/policies]
-        Vendors[/vendors]
+        Users[/v1/users]
+        Systems[/v1/systems]
+        Documents[/v1/documents]
+        Incidents[/v1/incidents]
+        Policies[/v1/policies]
+        Vendors[/v1/vendors]
     end
     
     subgraph Compliance [Compliance Operations]
-        Blast[GET /compliance/blast-radius]
-        Drift[GET /compliance/drift]
-        Stats[GET /compliance/stats]
-        Threats[GET /compliance/threats]
+        Blast[GET /v1/compliance/blast-radius]
+        Drift[GET /v1/compliance/drift]
+        Stats[GET /v1/compliance/stats]
+        Threats[GET /v1/compliance/threats]
     end
     
-    subgraph Intelligence [AI & Analysis]
-        Chat[POST /chat]
-        History[/history/*]
-        Export[GET /export/oscal]
+    subgraph Intelligence [AI and Analysis]
+        Chat[POST /v1/chat]
+        History[/v1/history/*]
+        Export[GET /v1/export/oscal]
     end
     
     subgraph Ingest [Data Ingestion]
-        Events[POST /ingest]
-        Scans[/scans]
-        SBOM[/sbom]
+        Events[POST /v1/ingest]
+        Scans[/v1/scans]
+        SBOM[/v1/sbom]
     end
 ```
 
@@ -632,6 +634,71 @@ sequenceDiagram
 | **AI (Cloud)** | OpenAI | GPT-4 |
 | **Protocol** | MCP | 1.1.2 |
 | **HTTP Client** | httpx | 0.27.2 |
+
+---
+
+## 10. Optional Integrations
+
+### Gemara MCP Server
+
+PACT can integrate with the Gemara Policy Compiler via the Model Context Protocol (MCP).
+
+**Detection:** On startup, PACT looks for `gemara-mcp-server/gemara-server` binary.
+
+**Behavior:**
+- **If found:** GRC-specific tools are available in the AI Auditor (policy authoring, validation, framework queries)
+- **If not found:** Chat still works using graph context only; GRC tools are gracefully disabled
+
+**Configuration:**
+```bash
+# Gemara is optional - no configuration required if not using it
+# If using Gemara, ensure the binary is in the expected path
+ls gemara-mcp-server/gemara-server
+```
+
+### AI Provider Fallback
+
+PACT attempts AI providers in this order:
+1. **Ollama** (local) - If `OLLAMA_HOST` is reachable
+2. **OpenAI** (cloud) - If `OPENAI_API_KEY` is set
+3. **Disabled** - Chat returns an error if no provider is available
+
+---
+
+## 11. Demo Scope and Limitations
+
+The current release is optimized for demonstration and evaluation. Production deployments should consider the following:
+
+### Implemented Features
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Event ingestion | Full | `file_access`, `network_connection` types |
+| SHACL validation | Full | Custom rules supported |
+| Blast radius | Full | Framework cross-walk included |
+| Drift detection | Full | Temporal graph comparison |
+| AI Auditor | Full | Graph context injection |
+| OSCAL export | Full | Assessment Results format |
+| JWT authentication | Full | Access + refresh tokens |
+| RBAC | Full | 9 roles with permissions |
+| WebSocket | Full | Real-time updates |
+
+### Demo Constraints
+
+| Constraint | Details |
+|------------|---------|
+| Demo systems | Evidence attached to HR Portal, Payment Gateway nodes |
+| Framework mappings | Illustrative NIST/PCI/ISO mappings |
+| Graph storage | File-based TriG (single instance) |
+| Database | SQLite (use PostgreSQL for production) |
+
+### Production Recommendations
+
+- Replace SQLite with PostgreSQL
+- Configure proper `CORS_ALLOW_ORIGINS`
+- Set strong `JWT_SECRET_KEY`
+- Enable `ENABLE_HSTS` with HTTPS
+- Use external SPARQL endpoint for graph scaling
 
 ---
 
