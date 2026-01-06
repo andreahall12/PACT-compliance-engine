@@ -83,7 +83,7 @@ Track systems through their entire lifecycle:
 | :--- | :--- |
 | **Snapshot in Time:** "It was secure last month." | **Continuous:** "It became insecure 5 minutes ago." |
 | **Spreadsheets:** Manual data entry & errors. | **Knowledge Graph:** Auto-generated relationships. |
-| **Siloed:** Compliance doesn't know about Engineering. | **Unified:** Maps `Failed Control` → `Git Commit`. |
+| **Siloed:** Compliance doesn't know about Engineering. | **Unified:** Maps `Failed Control` → `Evidence Source`. |
 | **Opaque:** "Why did we fail?" | **Traceable:** "We failed because of *this* log file." |
 
 ---
@@ -197,7 +197,9 @@ pip install -r requirements.txt
 
 ### First-Time Setup (Bootstrap)
 
-If this is a fresh installation with no users, bootstrap the first admin:
+If this is a fresh installation with no users, bootstrap the first admin.
+
+> **Note:** Bootstrap only works when the database has zero users. After the first admin is created, use the dashboard or API to add more users.
 
 ```bash
 curl -X POST http://localhost:8002/v1/auth/bootstrap \
@@ -218,20 +220,100 @@ curl -X POST http://localhost:8002/v1/auth/bootstrap \
 
 ---
 
+## Configuration
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PACT_API_KEY` | Legacy API key for machine-to-machine auth (optional) | None (disabled) |
+| `OPENAI_API_KEY` | OpenAI API key for cloud AI | None |
+| `OLLAMA_HOST` | Ollama server URL | `http://localhost:11434/v1` |
+| `AI_MODEL` | AI model to use | `granite3.3:8b` |
+| `CORS_ALLOW_ORIGINS` | Allowed CORS origins (comma-separated) | `*` |
+| `ENABLE_DOCS` | Enable Swagger/ReDoc at `/docs` | `true` |
+| `TRUSTED_HOSTS` | Allowed host headers | `localhost,127.0.0.1` |
+| `DEBUG` | Enable debug logging | `false` |
+| `ENABLE_HSTS` | Enable HTTP Strict Transport Security | `false` |
+
+### Authentication Modes
+
+PACT supports two authentication mechanisms:
+
+1. **JWT Authentication (Primary)** - For users and the dashboard
+   - Login via `POST /v1/auth/login` to get access/refresh tokens
+   - Include `Authorization: Bearer <token>` header on requests
+   - Tokens expire after 15 minutes; use refresh token to renew
+
+2. **Legacy API Key (Optional)** - For CI/CD and scripts
+   - Set `PACT_API_KEY` environment variable
+   - Include `X-API-Key: <key>` header on requests
+   - Excluded paths (no key required): `/`, `/health`, `/docs`, `/visualize*`, `/v1/auth/*`
+
+---
+
+## Quickstart (API)
+
+Here are curl examples to get started quickly:
+
+```bash
+# Login and get token
+TOKEN=$(curl -s -X POST http://localhost:8002/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@pact.io","password":"Admin@123!"}' | jq -r .access_token)
+
+# Ingest security events
+curl -X POST http://localhost:8002/v1/ingest \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "events": [
+      {"type": "file_access", "file": "/etc/shadow", "permission": "0644", "system": "hr-portal"},
+      {"type": "network_connection", "port": 23, "protocol": "tcp", "system": "payment-gateway"}
+    ]
+  }'
+
+# Get blast radius (compliance failures)
+curl -s http://localhost:8002/v1/compliance/blast-radius \
+  -H "Authorization: Bearer $TOKEN" | jq
+
+# Get configuration drift
+curl -s http://localhost:8002/v1/compliance/drift \
+  -H "Authorization: Bearer $TOKEN" | jq
+
+# Ask the AI Auditor
+curl -X POST http://localhost:8002/v1/chat \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What controls are currently failing and why?"}'
+
+# Export OSCAL report
+curl -s http://localhost:8002/v1/export/oscal \
+  -H "Authorization: Bearer $TOKEN" -o oscal-report.json
+```
+
+---
+
 ## API Reference
 
 PACT exposes a RESTful API at `/v1/`. Key endpoints:
 
 | Category | Endpoints | Description |
 |----------|-----------|-------------|
-| **Authentication** | `POST /v1/auth/login`, `/register`, `/bootstrap` | User authentication and registration |
+| **Authentication** | `POST /v1/auth/login`, `/refresh`, `/bootstrap` | JWT authentication and registration |
 | **Users** | `GET/POST/PATCH/DELETE /v1/users` | User management (Admin only) |
 | **Systems** | `GET/POST/PATCH/DELETE /v1/systems` | System lifecycle management |
 | **Documents** | `GET/POST /v1/documents` | Evidence and document management |
-| **Compliance** | `GET /v1/compliance/blast-radius`, `/drift`, `/stats` | Compliance data and analysis |
+| **Policies** | `GET/POST/PATCH/DELETE /v1/policies` | Policy and SHACL rule management |
+| **Vendors** | `GET/POST/PATCH/DELETE /v1/vendors` | Third-party vendor risk tracking |
+| **Incidents** | `GET/POST/PATCH/DELETE /v1/incidents` | Security incident tracking |
+| **Compliance** | `GET /v1/compliance/blast-radius`, `/drift`, `/stats`, `/threats` | Compliance data and analysis |
 | **History** | `GET /v1/history/at`, `/timeline`, `/compare` | Historical compliance views |
+| **Export** | `GET /v1/export/oscal` | OSCAL Assessment Results export |
 | **Chat** | `POST /v1/chat` | AI Auditor queries |
 | **Ingest** | `POST /v1/ingest` | Ingest security events |
+| **Schedules** | `GET/POST /v1/schedules` | Recurring assessment schedules |
+| **WebSocket** | `WS /v1/ws` | Real-time compliance updates |
 
 Full API documentation available at [http://localhost:8002/docs](http://localhost:8002/docs)
 
@@ -250,10 +332,57 @@ Full API documentation available at [http://localhost:8002/docs](http://localhos
 
 ## Integrations
 
-*   **Gemara:** We natively consume SHACL rules compiled by the Gemara Policy Compiler.
+*   **Gemara:** We natively consume SHACL rules compiled by the Gemara Policy Compiler. *(Optional - chat works without it)*
 *   **ComplyTime:** We export results that fit into the ComplyTime lifecycle.
 *   **Splunk / OCSF:** We ingest standard JSON security logs.
 *   **CI/CD:** API-first design enables integration with GitHub Actions, GitLab CI, etc.
+
+---
+
+## Troubleshooting
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `401 Unauthorized` | Invalid or expired token | Re-login via `/v1/auth/login` |
+| `Invalid or missing API key` | `PACT_API_KEY` set but not provided | Add `X-API-Key` header or unset env var |
+| `Ollama connection failed` | Ollama not running | Start with `ollama serve` or check `OLLAMA_HOST` |
+| `CORS policy blocked` | Browser cross-origin issue | Set `CORS_ALLOW_ORIGINS` to your frontend URL |
+| `No users exist` | Fresh installation | Use bootstrap endpoint (works only once) |
+| `Database locked` | Concurrent SQLite access | Use PostgreSQL for production |
+| AI returns generic answers | No graph context | Ingest events first via `/v1/ingest` |
+
+### Common Setup Issues
+
+**Ollama not responding:**
+```bash
+# Check if Ollama is running
+curl http://localhost:11434/api/version
+
+# Start Ollama
+ollama serve
+
+# Pull the model if needed
+ollama pull granite3.3:8b
+```
+
+**Database auto-initialization:**
+The SQLite database (`db/pact.db`) is created automatically on first run. If no users exist, a default admin account is created with a temporary password shown in the console.
+
+---
+
+## Demo Scope
+
+The current release is optimized for demonstration and evaluation:
+
+| Feature | Status |
+|---------|--------|
+| Event types | `file_access`, `network_connection` supported |
+| Systems | Demo includes HR Portal, Payment Gateway |
+| Frameworks | NIST 800-53, PCI-DSS 4.0, ISO 27001 mappings |
+| AI Auditor | Full graph context + natural language |
+| OSCAL Export | Complete Assessment Results format |
+
+For production deployments, see the [Administrator Guide](docs/administrator-guide.md).
 
 ---
 
