@@ -11,9 +11,24 @@ from app.core.config import BASE_DIR, OPENAI_API_KEY, OLLAMA_HOST, AI_MODEL
 
 router = APIRouter()
 
+# =============================================================================
+# Constants
+# =============================================================================
+
 # Configuration for the Gemara Server Binary
 GEMARA_SERVER_PATH = BASE_DIR / "gemara-mcp-server" / "gemara-server"
 GEMARA_SERVER_ARGS = []
+
+# Query limits
+COMPLIANCE_CONTEXT_LIMIT = 25
+THREAT_CONTEXT_LIMIT = 10
+
+# SPARQL Prefixes (shared with compliance.py)
+SPARQL_PREFIXES = """
+PREFIX pact: <http://your-org.com/ns/pact#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX uco-obs: <https://ontology.unifiedcyberontology.org/uco/observable/>
+"""
 
 # OpenAI Setup
 try:
@@ -41,20 +56,16 @@ async def gemara_client():
         yield None
 
 def get_compliance_context():
-    query = """
-    PREFIX pact: <http://your-org.com/ns/pact#>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    PREFIX uco-obs: <https://ontology.unifiedcyberontology.org/uco/observable/>
-
+    query = SPARQL_PREFIXES + f"""
     SELECT ?systemName ?processName ?controlName ?verdict ?assetName ?time (GROUP_CONCAT(?mappedReq; separator=", ") AS ?impactedFrameworks)
-    WHERE {
-        GRAPH ?g {
+    WHERE {{
+        GRAPH ?g {{
             ?assessment pact:hasVerdict ?verdict ;
                         pact:validatesControl ?control ;
                         pact:evaluatedEvidence ?ev ;
                         pact:generatedAt ?time .
             
-            { ?ev uco-obs:fileName ?assetName } UNION { ?ev uco-obs:destinationPort ?assetName }
+            {{ ?ev uco-obs:fileName ?assetName }} UNION {{ ?ev uco-obs:destinationPort ?assetName }}
             
             ?system pact:hasComponent ?ev ;
                     rdfs:label ?systemName ;
@@ -62,12 +73,12 @@ def get_compliance_context():
                     
             ?process rdfs:label ?processName .
             ?control rdfs:label ?controlName .
-        }
-        OPTIONAL { ?control pact:satisfiesRequirement ?mappedReq . }
-    }
+        }}
+        OPTIONAL {{ ?control pact:satisfiesRequirement ?mappedReq . }}
+    }}
     GROUP BY ?systemName ?processName ?controlName ?verdict ?assetName ?time
     ORDER BY DESC(?time)
-    LIMIT 25
+    LIMIT {COMPLIANCE_CONTEXT_LIMIT}
     """
     results = db.query(query)
     context_data = []
@@ -97,13 +108,11 @@ async def chat_with_auditor(payload: Dict[str, str] = Body(...)):
 
     context_data = get_compliance_context()
     
-    threat_sparql = """
-    PREFIX pact: <http://your-org.com/ns/pact#>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    SELECT ?vulnName ?controlName ?systemName ?verdict WHERE {
+    threat_sparql = SPARQL_PREFIXES + f"""
+    SELECT ?vulnName ?controlName ?systemName ?verdict WHERE {{
         ?control pact:mitigates ?vuln . ?vuln rdfs:label ?vulnName . ?control rdfs:label ?controlName .
-        GRAPH ?g { ?assess pact:validatesControl ?control ; pact:hasVerdict ?verdict ; pact:evaluatedEvidence ?ev . ?system pact:hasComponent ?ev ; rdfs:label ?systemName . }
-    } LIMIT 10
+        GRAPH ?g {{ ?assess pact:validatesControl ?control ; pact:hasVerdict ?verdict ; pact:evaluatedEvidence ?ev . ?system pact:hasComponent ?ev ; rdfs:label ?systemName . }}
+    }} LIMIT {THREAT_CONTEXT_LIMIT}
     """
     threat_results = db.query(threat_sparql)
     threat_data = []

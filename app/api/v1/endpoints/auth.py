@@ -39,6 +39,52 @@ from app.schemas.auth import (
 router = APIRouter()
 
 
+@router.post("/bootstrap")
+async def bootstrap_admin(
+    email: str,
+    password: str,
+    full_name: str = "Admin User",
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Create the first admin user when no users exist.
+    
+    This endpoint only works when the database has no users.
+    It's meant for initial system setup only.
+    """
+    from app.models.user import UserRole
+    
+    # Check if any users exist
+    result = await db.execute(select(User))
+    existing_users = result.scalars().all()
+    
+    if existing_users:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="System already has users. Bootstrap is disabled.",
+        )
+    
+    # Create admin user
+    admin = User(
+        email=email.lower(),
+        full_name=full_name,
+        role=UserRole.ADMIN,
+        is_active=True,
+        is_verified=True,
+    )
+    admin.set_password(password)
+    
+    db.add(admin)
+    await db.commit()
+    await db.refresh(admin)
+    
+    return {
+        "message": "Admin user created successfully",
+        "email": admin.email,
+        "role": admin.role.value,
+    }
+
+
 @router.post("/login", response_model=LoginResponse)
 async def login(
     request: Request,

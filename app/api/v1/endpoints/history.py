@@ -15,7 +15,7 @@ from rdflib.namespace import RDF, RDFS, XSD
 
 from app.core.database import get_db
 from app.core.config import DB_FILE
-from app.core.store import get_pact_graph
+from app.core.store import db as pact_store
 from app.models.user import User
 from app.auth.dependencies import require_permission
 from app.schemas.incident import HistoricalComplianceState
@@ -40,8 +40,8 @@ async def get_compliance_at_date(
     valid as of the requested date.
     """
     try:
-        # Load the full graph
-        g = get_pact_graph()
+        # Load the full graph (Dataset)
+        g = pact_store.ds
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -161,7 +161,7 @@ async def get_compliance_timeline(
     Returns a series of events showing when compliance state changed.
     """
     try:
-        g = get_pact_graph()
+        g = pact_store.ds
     except Exception:
         return {"events": [], "message": "No historical data available"}
     

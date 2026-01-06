@@ -169,3 +169,33 @@ class TeamResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
+# =============================================================================
+# Helper Functions
+# =============================================================================
+
+def user_to_response(user) -> UserResponse:
+    """
+    Convert a User model to UserResponse.
+    
+    This helper centralizes the conversion logic to avoid duplication
+    across multiple endpoints.
+    
+    Args:
+        user: User model instance (must have teams relationship loaded)
+        
+    Returns:
+        UserResponse schema instance
+    """
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        role=user.role,
+        is_active=user.is_active,
+        is_verified=user.is_verified,
+        teams=[t.name for t in user.teams],
+        created_at=user.created_at,
+        last_login=user.last_login,
+    )
+
