@@ -637,6 +637,185 @@
 
         /* Hidden */
         .hidden { display: none !important; }
+        
+        /* Filter Bar */
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 16px;
+            background: var(--bg-elevated);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        
+        .filter-select {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 12px;
+            color: var(--text-primary);
+            font-size: 13px;
+            min-width: 150px;
+        }
+        
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+        }
+        
+        .filter-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 8px;
+        }
+        
+        /* Finding Detail Drawer */
+        .drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .drawer-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .drawer {
+            position: fixed;
+            top: 0;
+            right: -500px;
+            width: 500px;
+            max-width: 90vw;
+            height: 100vh;
+            background: var(--bg-card);
+            z-index: 1001;
+            transition: right 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .drawer.active {
+            right: 0;
+        }
+        
+        .drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .drawer-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .drawer-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+        
+        .drawer-close:hover {
+            color: var(--text-primary);
+        }
+        
+        .drawer-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+        
+        .drawer-section {
+            margin-bottom: 24px;
+        }
+        
+        .drawer-section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+        
+        .drawer-field {
+            margin-bottom: 16px;
+        }
+        
+        .drawer-field-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        
+        .drawer-field-value {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+        
+        .drawer-field-value.mono {
+            font-family: var(--font-mono);
+            font-size: 13px;
+        }
+        
+        .drawer-evidence-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-size: 13px;
+        }
+        
+        .drawer-evidence-link:hover {
+            text-decoration: underline;
+        }
+        
+        .drawer-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+        }
+        
+        .framework-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .framework-tag {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
     </style>
 </head>
 <body>
@@ -787,6 +966,36 @@
                                 <div class="kpi-label">Documents</div>
                                 <div class="kpi-value" id="kpi-docs">-</div>
                             </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Dynamic Filters -->
+                    <div class="filter-bar" id="compliance-filters">
+                        <div class="filter-group">
+                            <span class="filter-label">System:</span>
+                            <select class="filter-select" id="filter-system">
+                                <option value="">All Systems</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-label">Framework:</span>
+                            <select class="filter-select" id="filter-framework">
+                                <option value="">All Frameworks</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-label">Control:</span>
+                            <select class="filter-select" id="filter-control">
+                                <option value="">All Controls</option>
+                            </select>
+                        </div>
+                        <div class="filter-actions">
+                            <button class="btn btn-secondary" onclick="clearFilters()">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
+                            <button class="btn btn-primary" onclick="applyFilters()">
+                                <i class="fas fa-filter"></i> Apply
+                            </button>
                         </div>
                     </div>
                     
@@ -1063,14 +1272,284 @@
         </div>
     </div>
 
+    <!-- Finding Detail Drawer -->
+    <div id="drawer-overlay" class="drawer-overlay" onclick="closeFindingDrawer()"></div>
+    <div id="finding-drawer" class="drawer">
+        <div class="drawer-header">
+            <h2 class="drawer-title">Finding Details</h2>
+            <button class="drawer-close" onclick="closeFindingDrawer()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="drawer-body">
+            <div class="drawer-section">
+                <div class="drawer-section-title">Status</div>
+                <span id="drawer-verdict" class="status-badge">-</span>
+            </div>
+            
+            <div class="drawer-section">
+                <div class="drawer-section-title">Control Information</div>
+                <div class="drawer-field">
+                    <div class="drawer-field-label">Control</div>
+                    <div class="drawer-field-value" id="drawer-control">-</div>
+                </div>
+                <div class="drawer-field">
+                    <div class="drawer-field-label">Mapped Frameworks</div>
+                    <div class="framework-tags" id="drawer-frameworks">
+                        <span class="framework-tag">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="drawer-section">
+                <div class="drawer-section-title">System Context</div>
+                <div class="drawer-field">
+                    <div class="drawer-field-label">System</div>
+                    <div class="drawer-field-value" id="drawer-system">-</div>
+                </div>
+                <div class="drawer-field">
+                    <div class="drawer-field-label">Business Process</div>
+                    <div class="drawer-field-value" id="drawer-process">-</div>
+                </div>
+            </div>
+            
+            <div class="drawer-section">
+                <div class="drawer-section-title">Evidence</div>
+                <div class="drawer-field">
+                    <div class="drawer-field-label">Asset</div>
+                    <div class="drawer-field-value mono" id="drawer-asset">-</div>
+                </div>
+                <div class="drawer-field">
+                    <div class="drawer-field-label">Detected At</div>
+                    <div class="drawer-field-value" id="drawer-timestamp">-</div>
+                </div>
+                <div class="drawer-field">
+                    <div class="drawer-field-label">Source</div>
+                    <a href="#" id="drawer-evidence-link" class="drawer-evidence-link" target="_blank">
+                        <i class="fas fa-external-link-alt"></i>
+                        <span>View in source system</span>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="drawer-section">
+                <div class="drawer-section-title">Raw Data</div>
+                <pre style="background: var(--bg-dark); padding: 12px; border-radius: 6px; font-size: 12px; overflow-x: auto; color: var(--text-secondary);" id="drawer-raw">-</pre>
+            </div>
+        </div>
+        <div class="drawer-footer">
+            <button class="btn btn-secondary" onclick="closeFindingDrawer()">Close</button>
+            <button class="btn btn-primary" onclick="createIncidentFromFinding()">
+                <i class="fas fa-exclamation-circle"></i> Create Incident
+            </button>
+        </div>
+    </div>
+
     <script>
+        // =================================================================
+        // Constants
+        // =================================================================
+        const API_BASE_URL = window.location.origin;
+        const API_URL = API_BASE_URL + '/v1';
+        const AUTH_ERROR_MSG = 'Session expired. Please login again.';
+        const API_KEY_REQUIRED_MSG = 'API Key required for this action';
+        const LOADING_HTML = '<div class="loading"><span></span><span></span><span></span></div>';
+        
         // =================================================================
         // State
         // =================================================================
-        const API_URL = window.location.origin + '/v1';
+        let catalogData = null;  // Cached catalog for filters
+        let currentFinding = null;  // Currently selected finding
         let currentUser = null;
         let accessToken = null;
         let refreshToken = null;
+        
+        // =================================================================
+        // Render Helpers
+        // =================================================================
+        function renderEmptyRow(colspan, message, icon = null) {
+            const iconHtml = icon ? `<i class="fas ${icon}" style="font-size: 32px; margin-bottom: 12px;"></i><br>` : '';
+            return `<tr><td colspan="${colspan}" style="text-align: center; padding: 40px;">${iconHtml}<span class="text-muted">${message}</span></td></tr>`;
+        }
+        
+        function renderSuccessRow(colspan, message) {
+            return `<tr><td colspan="${colspan}" style="text-align: center; padding: 40px;"><i class="fas fa-check-circle text-success" style="font-size: 32px; margin-bottom: 12px;"></i><br><span class="text-success">${message}</span></td></tr>`;
+        }
+        
+        function renderLoadingRow(colspan) {
+            return `<tr><td colspan="${colspan}" style="text-align: center; padding: 40px;">${LOADING_HTML}</td></tr>`;
+        }
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function formatDateShort(dateStr) {
+            if (!dateStr) return '-';
+            return new Date(dateStr).toLocaleDateString();
+        }
+        
+        function renderFrameworkBadges(frameworksStr) {
+            if (!frameworksStr || frameworksStr === 'None') return '';
+            return frameworksStr.split(', ').map(fw => 
+                `<span class="status-badge" style="margin-right: 4px;">${escapeHtml(fw)}</span>`
+            ).join('');
+        }
+        
+        function handleAuthError() {
+            accessToken = null;
+            localStorage.removeItem('pact_access_token');
+            showLogin();
+            showToast(AUTH_ERROR_MSG, 'warning');
+        }
+        
+        // =================================================================
+        // Catalog & Filters
+        // =================================================================
+        async function loadCatalog() {
+            try {
+                const res = await apiFetch('/catalog');
+                if (res.ok) {
+                    catalogData = await res.json();
+                    populateFilters();
+                }
+            } catch (e) {
+                console.error('Failed to load catalog:', e);
+            }
+        }
+        
+        function populateFilters() {
+            if (!catalogData) return;
+            
+            // Populate systems dropdown
+            const systemSelect = document.getElementById('filter-system');
+            systemSelect.innerHTML = '<option value="">All Systems</option>';
+            catalogData.systems.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.name + (s.failure_count > 0 ? ` (${s.failure_count} failures)` : '');
+                systemSelect.appendChild(opt);
+            });
+            
+            // Populate frameworks dropdown
+            const frameworkSelect = document.getElementById('filter-framework');
+            frameworkSelect.innerHTML = '<option value="">All Frameworks</option>';
+            catalogData.frameworks.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = f.name + ` (${f.control_count} controls)`;
+                frameworkSelect.appendChild(opt);
+            });
+            
+            // Populate controls dropdown
+            const controlSelect = document.getElementById('filter-control');
+            controlSelect.innerHTML = '<option value="">All Controls</option>';
+            catalogData.controls.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                controlSelect.appendChild(opt);
+            });
+        }
+        
+        function clearFilters() {
+            document.getElementById('filter-system').value = '';
+            document.getElementById('filter-framework').value = '';
+            document.getElementById('filter-control').value = '';
+            loadDashboard();
+        }
+        
+        function applyFilters() {
+            loadDashboard();
+        }
+        
+        function getActiveFilters() {
+            return {
+                system: document.getElementById('filter-system').value,
+                framework: document.getElementById('filter-framework').value,
+                control: document.getElementById('filter-control').value
+            };
+        }
+        
+        // =================================================================
+        // Finding Detail Drawer
+        // =================================================================
+        function openFindingDrawer(finding) {
+            currentFinding = finding;
+            
+            // Populate drawer fields
+            const verdictEl = document.getElementById('drawer-verdict');
+            verdictEl.className = 'status-badge ' + (finding.verdict === 'FAIL' ? 'fail' : 'pass');
+            verdictEl.textContent = finding.verdict || 'Unknown';
+            
+            document.getElementById('drawer-control').textContent = finding.control || 'Unknown';
+            document.getElementById('drawer-system').textContent = finding.system_name || finding.system || 'Unknown';
+            document.getElementById('drawer-process').textContent = finding.process || 'N/A';
+            document.getElementById('drawer-asset').textContent = finding.asset || finding.evidence || 'Unknown';
+            document.getElementById('drawer-timestamp').textContent = finding.timestamp || 'Unknown';
+            
+            // Frameworks
+            const frameworksEl = document.getElementById('drawer-frameworks');
+            const frameworks = finding.mapped_frameworks || finding.frameworks || [];
+            if (frameworks.length > 0) {
+                frameworksEl.innerHTML = frameworks.map(f => 
+                    `<span class="framework-tag">${f}</span>`
+                ).join('');
+            } else {
+                frameworksEl.innerHTML = '<span class="framework-tag">No mappings</span>';
+            }
+            
+            // Evidence link
+            const evidenceLink = document.getElementById('drawer-evidence-link');
+            if (finding.evidence_link || finding.deeplink) {
+                evidenceLink.href = finding.evidence_link || finding.deeplink;
+                evidenceLink.style.display = 'inline-flex';
+            } else {
+                evidenceLink.style.display = 'none';
+            }
+            
+            // Raw data
+            document.getElementById('drawer-raw').textContent = JSON.stringify(finding, null, 2);
+            
+            // Show drawer
+            document.getElementById('drawer-overlay').classList.add('active');
+            document.getElementById('finding-drawer').classList.add('active');
+        }
+        
+        function closeFindingDrawer() {
+            document.getElementById('drawer-overlay').classList.remove('active');
+            document.getElementById('finding-drawer').classList.remove('active');
+            currentFinding = null;
+        }
+        
+        async function createIncidentFromFinding() {
+            if (!currentFinding) return;
+            
+            try {
+                const res = await apiFetch('/incidents', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        title: `Compliance Failure: ${currentFinding.control || 'Unknown Control'}`,
+                        description: `Automated incident from compliance failure.\n\nSystem: ${currentFinding.system_name || currentFinding.system || 'Unknown'}\nAsset: ${currentFinding.asset || currentFinding.evidence || 'Unknown'}`,
+                        severity: 'high',
+                        incident_type: 'compliance_violation',
+                        related_finding: currentFinding
+                    })
+                });
+                
+                if (res.ok) {
+                    alert('Incident created successfully!');
+                    closeFindingDrawer();
+                } else {
+                    const error = await res.json();
+                    alert('Failed to create incident: ' + (error.detail || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Error creating incident: ' + e.message);
+            }
+        }
         
         // =================================================================
         // Auth
@@ -1086,7 +1565,14 @@
                 
                 if (!res.ok) {
                     const error = await res.json();
-                    throw new Error(error.detail || 'Login failed');
+                    // Handle both string and array error formats
+                    let errorMessage = 'Login failed';
+                    if (typeof error.detail === 'string') {
+                        errorMessage = error.detail;
+                    } else if (Array.isArray(error.detail) && error.detail.length > 0) {
+                        errorMessage = error.detail[0].msg || error.detail[0].message || 'Validation error';
+                    }
+                    throw new Error(errorMessage);
                 }
                 
                 const data = await res.json();
@@ -1159,8 +1645,8 @@
                     headers.set('Authorization', `Bearer ${accessToken}`);
                     return fetch(`${API_URL}${path}`, { ...options, headers, credentials: 'include' });
                 } else {
-                    logout();
-                    throw new Error('Session expired');
+                    handleAuthError();
+                    throw new Error(AUTH_ERROR_MSG);
                 }
             }
             
@@ -1206,6 +1692,7 @@
             
             updateUserDisplay();
             updateNavForRole();
+            loadCatalog();  // Load filter options
         }
         
         function showLoginError(message) {
@@ -1298,89 +1785,66 @@
             }
         }
         
+        // Store findings data for drawer access
+        let blastRadiusData = [];
+        
         function renderBlastTable(data) {
             const tbody = document.getElementById('blast-table-body');
+            blastRadiusData = data;  // Store for drawer access
             
             if (data.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="6" style="text-align: center; padding: 40px;">
-                            <i class="fas fa-check-circle text-success" style="font-size: 32px; margin-bottom: 12px;"></i>
-                            <br><span class="text-success">All systems compliant</span>
-                        </td>
-                    </tr>
-                `;
+                tbody.innerHTML = renderSuccessRow(6, 'All systems compliant');
                 return;
             }
             
-            tbody.innerHTML = data.map(row => {
-                const date = new Date(row.timestamp);
-                const timeStr = date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                
-                return `
-                    <tr>
-                        <td class="text-muted text-mono" style="font-size: 12px;">${timeStr}</td>
-                        <td>
-                            <div style="font-weight: 600;">${escapeHtml(row.process)}</div>
-                            <div class="text-muted" style="font-size: 12px;"><i class="fas fa-server"></i> ${escapeHtml(row.system)}</div>
-                        </td>
-                        <td>
-                            <span class="status-badge info">${escapeHtml(row.control.split(':')[0])}</span>
-                        </td>
-                        <td>
-                            ${(row.impacted_frameworks || '').split(', ').map(fw => 
-                                `<span class="status-badge" style="margin-right: 4px;">${escapeHtml(fw)}</span>`
-                            ).join('')}
-                        </td>
-                        <td><code class="text-mono text-danger">${escapeHtml(row.asset)}</code></td>
-                        <td>
-                            <a href="${escapeHtml(row.link || '#')}" target="_blank" class="btn btn-secondary btn-sm">
-                                <i class="fas fa-external-link-alt"></i>
-                            </a>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+            tbody.innerHTML = data.map((row, index) => `
+                <tr onclick="openFindingDrawer(blastRadiusData[${index}])" style="cursor: pointer;">
+                    <td class="text-muted text-mono" style="font-size: 12px;">${formatDate(row.timestamp)}</td>
+                    <td>
+                        <div style="font-weight: 600;">${escapeHtml(row.process)}</div>
+                        <div class="text-muted" style="font-size: 12px;"><i class="fas fa-server"></i> ${escapeHtml(row.system)}</div>
+                    </td>
+                    <td>
+                        <span class="status-badge info">${escapeHtml((row.control || '').split(':')[0])}</span>
+                    </td>
+                    <td>${renderFrameworkBadges(row.impacted_frameworks)}</td>
+                    <td><code class="text-mono text-danger">${escapeHtml(row.asset)}</code></td>
+                    <td>
+                        <a href="${escapeHtml(row.link || '#')}" target="_blank" class="btn btn-secondary btn-sm" onclick="event.stopPropagation();">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </td>
+                </tr>
+            `).join('');
         }
         
         function renderDriftTable(data) {
             const tbody = document.getElementById('drift-table-body');
             
             if (data.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="4" style="text-align: center; padding: 40px;">
-                            <span class="text-muted">No configuration drift detected</span>
-                        </td>
-                    </tr>
-                `;
+                tbody.innerHTML = renderEmptyRow(4, 'No configuration drift detected');
                 return;
             }
             
-            tbody.innerHTML = data.map(row => {
-                const passDate = new Date(row.previous_pass).toLocaleDateString();
-                const failDate = new Date(row.current_fail).toLocaleDateString();
-                
-                return `
-                    <tr>
-                        <td>
-                            <div style="font-weight: 600;">${escapeHtml(row.system)}</div>
-                            <div class="text-muted" style="font-size: 12px;">${escapeHtml(row.control)}</div>
-                        </td>
-                        <td><code class="text-mono text-warning">${escapeHtml(row.asset)}</code></td>
-                        <td>
-                            <span class="text-success">${passDate}</span>
-                            <i class="fas fa-arrow-right text-muted" style="margin: 0 8px;"></i>
-                            <span class="text-danger">${failDate}</span>
-                        </td>
-                        <td>
-                            <a href="${escapeHtml(row.link || '#')}" target="_blank" class="btn btn-secondary btn-sm">
-                                <i class="fas fa-search"></i>
-                            </a>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+            tbody.innerHTML = data.map(row => `
+                <tr>
+                    <td>
+                        <div style="font-weight: 600;">${escapeHtml(row.system)}</div>
+                        <div class="text-muted" style="font-size: 12px;">${escapeHtml(row.control)}</div>
+                    </td>
+                    <td><code class="text-mono text-warning">${escapeHtml(row.asset)}</code></td>
+                    <td>
+                        <span class="text-success">${formatDateShort(row.previous_pass)}</span>
+                        <i class="fas fa-arrow-right text-muted" style="margin: 0 8px;"></i>
+                        <span class="text-danger">${formatDateShort(row.current_fail)}</span>
+                    </td>
+                    <td>
+                        <a href="${escapeHtml(row.link || '#')}" target="_blank" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-search"></i>
+                        </a>
+                    </td>
+                </tr>
+            `).join('');
         }
         
         // =================================================================
@@ -1388,7 +1852,7 @@
         // =================================================================
         async function loadSystems() {
             const tbody = document.getElementById('systems-table-body');
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;"><div class="loading"><span></span><span></span><span></span></div></td></tr>';
+            tbody.innerHTML = renderLoadingRow(7);
             
             try {
                 const res = await apiFetch('/systems');
@@ -1440,7 +1904,7 @@
         // =================================================================
         async function loadUsers() {
             const tbody = document.getElementById('users-table-body');
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;"><div class="loading"><span></span><span></span><span></span></div></td></tr>';
+            tbody.innerHTML = renderLoadingRow(6);
             
             try {
                 const res = await apiFetch('/users');
@@ -1448,11 +1912,11 @@
                     const data = await res.json();
                     renderUsersTable(data.items || []);
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align: center; padding: 40px;">Failed to load users</td></tr>';
+                    tbody.innerHTML = renderEmptyRow(6, 'Failed to load users');
                 }
             } catch (e) {
                 console.error('Failed to load users:', e);
-                tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align: center; padding: 40px;">Not authorized or error</td></tr>';
+                tbody.innerHTML = renderEmptyRow(6, 'Not authorized or error');
             }
         }
         
@@ -1460,7 +1924,7 @@
             const tbody = document.getElementById('users-table-body');
             
             if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align: center; padding: 40px;">No users found</td></tr>';
+                tbody.innerHTML = renderEmptyRow(6, 'No users found');
                 return;
             }
             
@@ -1494,7 +1958,7 @@
         // =================================================================
         async function loadDocuments() {
             const tbody = document.getElementById('docs-table-body');
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;"><div class="loading"><span></span><span></span><span></span></div></td></tr>';
+            tbody.innerHTML = renderLoadingRow(7);
             
             try {
                 const res = await apiFetch('/documents');
@@ -1502,11 +1966,11 @@
                     const data = await res.json();
                     renderDocsTable(data.items || []);
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-muted" style="text-align: center; padding: 40px;">No documents found</td></tr>';
+                    tbody.innerHTML = renderEmptyRow(7, 'No documents found');
                 }
             } catch (e) {
                 console.error('Failed to load documents:', e);
-                tbody.innerHTML = '<tr><td colspan="7" class="text-muted" style="text-align: center; padding: 40px;">Error loading documents</td></tr>';
+                tbody.innerHTML = renderEmptyRow(7, 'Error loading documents');
             }
         }
         

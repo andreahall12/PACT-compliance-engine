@@ -135,7 +135,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
                 "font-src 'self' https://cdnjs.cloudflare.com; "
                 "img-src 'self' data:; "
-                "connect-src 'self' http://localhost:* ws://localhost:*; "
+                "connect-src 'self' http://localhost:* ws://localhost:*"
             )
         else:
             # Strict CSP for API endpoints
@@ -273,13 +273,14 @@ def home():
 async def health_check():
     """Health check endpoint for load balancers and monitoring."""
     from datetime import datetime, timezone
+    from sqlalchemy import text
     from app.core.database import engine
     
     # Check database connection
     db_status = "healthy"
     try:
         async with engine.connect() as conn:
-            await conn.execute("SELECT 1")
+            await conn.execute(text("SELECT 1"))
     except Exception as e:
         db_status = f"unhealthy: {str(e)}"
     

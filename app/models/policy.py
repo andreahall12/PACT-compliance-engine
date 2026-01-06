@@ -211,6 +211,65 @@ class CustomPolicy(Base):
         )
 
 
+class PolicyType(str, PyEnum):
+    """Type of policy file."""
+    SHACL = "shacl"       # Standard SHACL shapes
+    GEMARA = "gemara"     # Gemara-compiled rules
+    OSCAL = "oscal"       # OSCAL profile
+
+
+class Policy(Base):
+    """
+    Simple policy file record for uploaded SHACL/Gemara policies.
+    
+    This is a lightweight model for managing policy files without
+    the full custom policy workflow.
+    """
+    
+    __tablename__ = "policies"
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    
+    # Metadata
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    policy_type: Mapped[PolicyType] = mapped_column(
+        Enum(PolicyType),
+        default=PolicyType.SHACL
+    )
+    framework: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    version: Mapped[str] = mapped_column(String(50), default="1.0.0")
+    
+    # File location
+    file_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    
+    # Status
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    
+    # Ownership
+    created_by_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True
+    )
+    
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc)
+    )
+    
+    # Relationships
+    created_by: Mapped[Optional["User"]] = relationship("User")
+    
+    def __repr__(self) -> str:
+        return f"<Policy {self.name}>"
+
+
 # Import for type hints
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

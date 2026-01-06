@@ -31,11 +31,11 @@ from app.schemas.incident import (
     IncidentCreate,
     IncidentUpdate,
     IncidentResponse,
-    IncidentListResponse,
     NearMissCreate,
     NearMissResponse,
     ComplianceSecurityCorrelation,
 )
+from app.schemas.common import PaginatedResponse
 
 router = APIRouter()
 
@@ -58,7 +58,7 @@ def generate_near_miss_id() -> str:
 # Incident CRUD
 # =============================================================================
 
-@router.get("", response_model=IncidentListResponse)
+@router.get("", response_model=PaginatedResponse[IncidentResponse])
 async def list_incidents(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -153,14 +153,11 @@ async def list_incidents(
         for i in incidents
     ]
     
-    pages = (total + per_page - 1) // per_page if per_page > 0 else 0
-    
-    return IncidentListResponse(
+    return PaginatedResponse.create(
         items=items,
         total=total,
         page=page,
         per_page=per_page,
-        pages=pages,
     )
 
 

@@ -38,13 +38,12 @@ from app.schemas.document import (
     DocumentCreate,
     DocumentUpdate,
     DocumentResponse,
-    DocumentListResponse,
     DocumentUploadResponse,
     EvidenceRequestCreate,
     EvidenceRequestUpdate,
     EvidenceRequestResponse,
-    EvidenceRequestListResponse,
 )
+from app.schemas.common import PaginatedResponse
 
 router = APIRouter()
 
@@ -103,7 +102,7 @@ def validate_file(file: UploadFile) -> None:
 # Document CRUD
 # =============================================================================
 
-@router.get("", response_model=DocumentListResponse)
+@router.get("", response_model=PaginatedResponse[DocumentResponse])
 async def list_documents(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -206,14 +205,11 @@ async def list_documents(
         for d in documents
     ]
     
-    pages = (total + per_page - 1) // per_page if per_page > 0 else 0
-    
-    return DocumentListResponse(
+    return PaginatedResponse.create(
         items=items,
         total=total,
         page=page,
         per_page=per_page,
-        pages=pages,
     )
 
 
@@ -629,7 +625,7 @@ async def delete_document(
 # Evidence Requests
 # =============================================================================
 
-@router.get("/requests", response_model=EvidenceRequestListResponse)
+@router.get("/requests", response_model=PaginatedResponse[EvidenceRequestResponse])
 async def list_evidence_requests(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -694,14 +690,11 @@ async def list_evidence_requests(
         for r in requests
     ]
     
-    pages = (total + per_page - 1) // per_page if per_page > 0 else 0
-    
-    return EvidenceRequestListResponse(
+    return PaginatedResponse.create(
         items=items,
         total=total,
         page=page,
         per_page=per_page,
-        pages=pages,
     )
 
 
