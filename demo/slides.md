@@ -106,14 +106,14 @@ Copy this content into PowerPoint, Google Slides, or Keynote.
 **[LIVE DEMO]**
 
 - Trigger a compliance failure
-- See the blast radius
+- See the blast radius **visual diagram**
 - Watch drift detection
 - Ask the AI auditor
 
 *Switching to live system...*
 
 ### Speaker Notes
-> "Let me switch to the live system and show you this actually working."
+> "Let me switch to the live system and show you this actually working. We'll see how one violation creates a visual blast radius across your entire compliance landscape."
 
 ### Timing
 0 seconds (transition slide)
@@ -127,13 +127,13 @@ Copy this content into PowerPoint, Google Slides, or Keynote.
 | Capability | What It Means |
 |------------|---------------|
 | **Real-time ingestion** | Events become findings instantly |
-| **Blast radius** | One failure → business impact across frameworks |
-| **Drift detection** | Catch regressions as they happen |
+| **Visual blast radius** | Interactive diagram: Event → System → Process → Frameworks |
+| **Drift detection + attribution** | WHO caused it, WHAT changed, WHEN, and WHY (SHACL message) |
 | **AI explainability** | Plain English answers grounded in data |
 | **Evidence traceability** | Every finding links to proof |
 
 ### Speaker Notes
-> "Recap of what we just saw. This isn't quarterly reporting—it's continuous. And the AI isn't making things up; it's reading the same graph the rules run against."
+> "Recap of what we just saw. The blast radius shows how one violation ripples across your compliance landscape. The drift detection doesn't just show 'something changed'—it shows WHO changed it and WHY it's a violation, using the actual SHACL message from the policy engine. This isn't quarterly reporting—it's continuous, with full attribution."
 
 ### Timing
 30 seconds

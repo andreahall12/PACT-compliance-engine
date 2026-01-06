@@ -152,11 +152,32 @@ curl -X POST http://localhost:8002/v1/ingest \
 >
 > One event, and we instantly see the blast radius across frameworks."
 
+### Show the Visual Diagram
+
+*[Click "Blast Radius" in the sidebar to navigate to the visualization page]*
+
+> "Now let me show you this visually. Click on Blast Radius in the sidebar..."
+
+*[Wait for the diagram to render]*
+
+> "This is a flowchart showing how a single violation propagates through your organization:
+>
+> - The **red nodes** are the actual violations—the files or ports that triggered the failure
+> - The **blue nodes** are your systems—Payment Gateway, HR Portal
+> - The **purple nodes** are your business processes—Credit Card Processing, Employee Onboarding
+> - The **green nodes** are the compliance frameworks that are now at risk
+>
+> One file with wrong permissions, and you can trace the impact all the way to PCI-DSS, ISO 27001, and SOC 2.
+>
+> This is the 'blast radius'—not just 'you failed,' but 'here's everything that's affected.'"
+
 ### For the Audience
 
 > *[To engineers]* "This mapping comes from the rules—which could come from Gemara."
 >
 > *[To compliance]* "This is the audit trail and the business impact in one place."
+>
+> *[To leadership]* "This is the visualization you show to the board—one chart that explains how technical debt translates to compliance risk."
 
 ---
 
@@ -184,25 +205,48 @@ curl -X POST http://localhost:8002/v1/ingest \
 ## Section 5: Show Drift (2 minutes)
 
 ### Stage Direction
-*Scroll to or click on the Configuration Drift section*
+*Click on "Config Drift" in the sidebar*
 
 ### Narration
 
 > "Here's something else I want to show you: drift detection."
 
-*[Point to the drift table]*
+*[Wait for the drift page to load with the timeline diagram]*
 
-> "This shows systems that *were* compliant but *aren't anymore*.
+> "This shows systems that *were* compliant but *aren't anymore*—and more importantly, it tells us WHO did it and WHY."
+
+*[Point to the timeline diagram]*
+
+> "The timeline shows the progression: system was passing, then someone changed something, now it's failing.
 >
-> See this row? The Payment Gateway was passing this control on Monday. Today it's failing. Something changed.
+> See this? The HR Portal was compliant on Monday. Then 'alice' changed ownership of a config file to 'root'—and now it's failing."
+
+### Show the Detail Cards
+
+*[Scroll down to the detail cards]*
+
+> "But here's the really powerful part. Each drift event has a full breakdown:
 >
-> This is continuous monitoring vs. point-in-time snapshots. We catch regressions as they happen—not in the next quarterly audit."
+> - **WHAT**: File ownership changed
+> - **WHEN**: Was passing Jan 5, failed Jan 6 at 3:30 PM
+> - **WHO**: 'alice' made the change
+> - **WHY**: 'File is owned by root user'—that's the actual SHACL validation message
+>
+> That 'WHY' comes directly from the policy rules. It's not me guessing—it's the engine telling you exactly which rule was violated."
+
+### Ask AI About the Drift
+
+*[Click the "Ask AI" button on a drift card]*
+
+> "And if I need more context, I can click 'Ask AI' and it pre-fills a question about this specific drift event."
 
 ### For the Audience
 
-> *[To VPs]* "This is how you answer 'when did we become non-compliant?' with precision."
+> *[To VPs]* "This is how you answer 'when did we become non-compliant and who did it?' with precision."
 >
-> *[To engineers]* "This is why we use named graphs—each scan is timestamped and we can compare across time."
+> *[To compliance]* "This is the audit trail you've been asking for—who, what, when, why, all in one view."
+>
+> *[To engineers]* "This is why we store SHACL messages in the graph—so we can surface the 'why' later."
 
 ---
 

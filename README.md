@@ -139,14 +139,25 @@ PACT uses **UCO** as its internal language. By mapping raw logs (like Splunk or 
 ## Key Features
 
 ### 1. Blast Radius Analysis
-Don't just fix a server; save a business process. PACT links low-level technical failures to high-level business impact.
+Don't just fix a server; save a business process. PACT links low-level technical failures to high-level business impact with an **interactive visual diagram**.
+
+The Blast Radius page shows a Mermaid flowchart visualizing:
+- 🚨 **Violation Events** → The triggering compliance failures
+- 🖥️ **Systems** → Affected information systems  
+- ⚙️ **Business Processes** → Impacted operations
+- 📋 **Frameworks** → Compliance frameworks at risk
 
 > *"Warning: The failure on 'Payment Gateway' is blocking the 'Credit Card Processing' function."*
 
 ### 2. Temporal Drift Detection
-Systems rot over time. PACT catches "Configuration Drift" by comparing today's graph against yesterday's.
+Systems rot over time. PACT catches "Configuration Drift" by comparing today's graph against yesterday's—and tells you **who** did it and **why** it failed.
 
-> *"Alert: `sensitive_config.yaml` passed checks for 90 days but was changed by `root` at 3:45 PM today."*
+The Config Drift page shows:
+- 📊 **Timeline Diagram** → Visual PASS → FAIL progression with actor attribution
+- 📋 **Detail Cards** → WHAT happened, WHEN, WHO caused it, WHY it failed
+- 🤖 **Ask AI** → One-click to ask the AI Auditor about the drift
+
+> *"Alert: `sensitive_config.yaml` passed for 90 days, then `alice` changed ownership to `root` at 3:45 PM—violating NIST AC-3."*
 
 ### 3. AI Auditor
 Ask plain English questions to your compliance data.

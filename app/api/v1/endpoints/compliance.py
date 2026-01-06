@@ -83,9 +83,15 @@ def get_blast_radius():
 def get_drift():
     """
     Identifies assets that have drifted from PASS to FAIL status.
+    
+    Returns enhanced details including:
+    - Actor/user who caused the drift
+    - SHACL violation message explaining why
+    - Event type and file path
     """
     query = """
-    SELECT ?systemName ?controlName ?identifier ?time1 ?time2 ?deepLink
+    SELECT ?systemName ?controlName ?identifier ?time1 ?time2 ?deepLink 
+           ?actorName ?ownerName ?changedBy ?eventType ?filePath ?violationMsg
     WHERE {
         GRAPH ?g2 {
             ?assess2 pact:hasVerdict "FAIL" ;
@@ -97,6 +103,19 @@ def get_drift():
             ?system pact:hasComponent ?ev2 ;
                     rdfs:label ?systemName .
             ?control rdfs:label ?controlName .
+            
+            # Optional: Actor name (explicit)
+            OPTIONAL { ?ev2 pact:actorName ?actorName . }
+            # Optional: Owner (file_access legacy)
+            OPTIONAL { ?ev2 uco-obs:owner ?ownerName . }
+            # Optional: Changed by (config_change legacy)
+            OPTIONAL { ?ev2 pact:changedBy ?changedBy . }
+            # Optional: Event type
+            OPTIONAL { ?ev2 pact:eventType ?eventType . }
+            # Optional: File path
+            OPTIONAL { ?ev2 uco-obs:filePath ?filePath . }
+            # Optional: SHACL violation message
+            OPTIONAL { ?ev2 pact:violationMessage ?violationMsg . }
         }
         GRAPH ?g1 {
             ?assess1 pact:hasVerdict "PASS" ;
@@ -111,13 +130,31 @@ def get_drift():
     """
     
     def mapper(row):
+        # Determine actor: explicit actor > owner > changedBy > "Unknown"
+        actor = None
+        if hasattr(row, 'actorName') and row.actorName:
+            actor = str(row.actorName)
+        elif hasattr(row, 'ownerName') and row.ownerName:
+            actor = str(row.ownerName)
+        elif hasattr(row, 'changedBy') and row.changedBy:
+            actor = str(row.changedBy)
+        
+        # Get violation message (the "why")
+        why = None
+        if hasattr(row, 'violationMsg') and row.violationMsg:
+            why = str(row.violationMsg)
+        
         return {
             "system": str(row.systemName),
             "control": str(row.controlName),
             "asset": str(row.identifier),
+            "asset_path": str(row.filePath) if hasattr(row, 'filePath') and row.filePath else None,
+            "event_type": str(row.eventType) if hasattr(row, 'eventType') and row.eventType else None,
+            "actor": actor,
             "previous_pass": str(row.time1),
             "current_fail": str(row.time2),
-            "link": str(row.deepLink)
+            "link": str(row.deepLink),
+            "why": why
         }
     
     return _rows_to_list(_run_query(query), mapper)
