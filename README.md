@@ -173,20 +173,26 @@ Stop writing Word docs. PACT exports a valid **NIST OSCAL** Assessment Results f
 ## Getting Started
 
 ### Prerequisites
-*   Python 3.10+
+*   Python 3.10+ ([python.org](https://www.python.org/downloads/))
+*   Git
 *   **Ollama** (Recommended for Local AI) or OpenAI API Key
 
 ### Local AI Setup (Beginner Friendly)
 PACT uses a local AI to help you understand your compliance data without sending your data to the cloud.
 
-1.  **Download Ollama:** Go to [ollama.com](https://ollama.com) and download the app.
+1.  **Download Ollama:** Go to [ollama.com](https://ollama.com) and download for your OS.
 2.  **Install the Model:**
     ```bash
     ollama run granite3.3:8b
     ```
-3.  **Keep it Running:** Make sure the Ollama app is running in your menu bar.
+3.  **Keep it Running:**
+    - **macOS:** Ollama runs in the menu bar automatically
+    - **Windows:** Ollama runs in the system tray automatically
+    - **Linux:** Run `ollama serve` in a separate terminal
 
 ### Installation
+
+**Clone and setup:**
 ```bash
 # Clone the repo
 git clone https://github.com/your-org/pact.git
@@ -194,17 +200,29 @@ cd pact
 
 # Create virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
-# Install dependencies
+**Activate virtual environment:**
+
+| OS | Command |
+|----|---------|
+| **macOS/Linux** | `source venv/bin/activate` |
+| **Windows (CMD)** | `venv\Scripts\activate.bat` |
+| **Windows (PowerShell)** | `venv\Scripts\Activate.ps1` |
+
+**Install dependencies:**
+```bash
 pip install -r requirements.txt
 ```
 
 ### Running the Server
-```bash
-# Start the PACT Server
-./venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload
-```
+
+| OS | Command |
+|----|---------|
+| **macOS/Linux** | `uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload` |
+| **Windows** | `uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload` |
+
+> **Note:** After activating the virtual environment, `uvicorn` is available in your PATH on all platforms.
 
 ### First-Time Setup (Bootstrap)
 
