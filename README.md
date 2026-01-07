@@ -53,6 +53,10 @@ Security engineers, compliance officers, auditors, system owners, and executives
 
 ![Config Drift](docs/images/config-drift.png)
 
+**AI Auditor** — Ask questions in plain English, get answers with specific evidence:
+
+![AI Auditor](docs/images/ai-auditor.png)
+
 ---
 
 ## Try It Now
