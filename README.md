@@ -129,21 +129,45 @@ graph TD
 
 ---
 
-## The Ecosystem: UCO, Gemara, and ComplyTime
+## The Ecosystem: How PACT, Gemara, and ComplyTime Work Together
 
-PACT is built on open standards to ensure interoperability across the cybersecurity industry.
+PACT is built on open standards and is designed to be the **runtime engine** that connects policy authoring to governance reporting.
 
-### UCO (Unified Cyber Ontology)
-PACT uses **UCO** as its internal language. By mapping raw logs (from Splunk, AWS CloudTrail, etc.) into a standard format, a "File" or "User" means the same thing regardless of the source. Think of it as a universal translator for security data.
+```
+┌──────────────┐         ┌──────────────┐         ┌──────────────┐
+│   GEMARA     │         │    PACT      │         │  COMPLYTIME  │
+│  (Compiler)  │ ──────► │   (Engine)   │ ──────► │ (Lifecycle)  │
+└──────────────┘         └──────────────┘         └──────────────┘
+       │                        │                        │
+ "Translate the           "Check if we're          "Manage the
+  rules into code"         following them"          whole process"
+```
 
-### Gemara (Policy Compiler)
-**Gemara** is the "legal translator" for PACT. It takes high-level regulatory guidance (like NIST SP 800-53) and compiles it into the technical rules (SHACL) that PACT can execute. You write policies in plain language; Gemara turns them into code.
+### The Data Flow
 
-### ComplyTime (Governance Lifecycle)
-**ComplyTime** provides the broader context for digital trust. PACT feeds ComplyTime with real-time evidence and **OSCAL** reports, enabling end-to-end governance lifecycle management.
+1. **Gemara compiles** regulatory text (NIST, PCI-DSS) into executable SHACL rules
+2. **PACT ingests** security logs and checks them against those rules in real-time
+3. **PACT generates** evidence: "secrets.yaml failed AC-3 at 3:45 PM"
+4. **PACT exports** OSCAL Assessment Results
+5. **ComplyTime consumes** OSCAL for audit prep, risk tracking, and reporting
 
-### OSCAL (Open Security Controls Assessment Language)
-**OSCAL** is a NIST standard for expressing compliance data in a machine-readable format. When PACT exports a report, it uses OSCAL so auditors, FedRAMP, eMASS, and ComplyTime can all consume it without translation.
+### Why PACT is "The Engine"
+
+| Without PACT | With PACT |
+|--------------|-----------|
+| Gemara writes rules, but nothing executes them | PACT executes Gemara's rules in real-time |
+| ComplyTime tracks compliance, but has no live data | PACT feeds ComplyTime with live evidence |
+| Auditors ask for proof, you scramble to find it | PACT links every failure to the exact log file |
+
+**PACT is the runtime that makes policies actionable and governance verifiable.**
+
+### The Standards
+
+| Standard | Role in PACT |
+|----------|--------------|
+| **UCO** (Unified Cyber Ontology) | Internal language for normalizing logs—a "File" means the same thing whether it came from Splunk or CloudTrail |
+| **SHACL** (Shapes Constraint Language) | W3C standard for expressing policy rules as code |
+| **OSCAL** (Open Security Controls Assessment Language) | NIST standard for exporting compliance reports that auditors and tools like ComplyTime can consume |
 
 ---
 
