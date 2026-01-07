@@ -39,6 +39,20 @@ Security engineers, compliance officers, auditors, system owners, and executives
 
 **Plus:** Role-based access for 9 different user types, system lifecycle tracking, document and evidence management, historical "time machine" views, and incident correlation.
 
+### Screenshots
+
+**Dashboard** — Real-time compliance status at a glance:
+
+![Dashboard](docs/images/dashboard.png)
+
+**Blast Radius** — See the impact of compliance failures:
+
+![Blast Radius](docs/images/blast-radius.png)
+
+**Config Drift** — Track what changed, when, and who did it:
+
+![Config Drift](docs/images/config-drift.png)
+
 ---
 
 ## Try It Now
