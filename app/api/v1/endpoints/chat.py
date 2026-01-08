@@ -30,6 +30,62 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX uco-obs: <https://ontology.unifiedcyberontology.org/uco/observable/>
 """
 
+# Usage documentation for "how do I" questions
+USAGE_DOCS = """
+## PACT Usage Guide
+
+### Dashboard
+- Shows real-time compliance posture across all systems
+- **Critical Failures** table lists controls that failed with evidence links
+- **Configuration Drift** shows systems that went from PASS to FAIL
+- Click any row to see details
+
+### Simulating Events
+1. Select a System from the dropdown (e.g., "PaymentGatewayCluster")
+2. Select one or more Frameworks (e.g., "NIST AC-3")
+3. Click "Simulate Event" and choose:
+   - **Successful Login** - creates a PASS event
+   - **Root File Access** - creates a FAIL event
+4. Click "Refresh Dashboard" to see the new data
+
+### Blast Radius
+- Shows the impact of compliance failures
+- Visual diagram: Failed Control → Affected Systems → Business Processes
+- Helps prioritize remediation by business impact
+
+### Configuration Drift
+- Timeline view of when systems drifted from compliant to non-compliant
+- Detail cards show: WHAT changed, WHEN, WHO (if known), and WHY (violation message)
+- "Ask AI" button lets you query specific drift events
+
+### AI Auditor (this chat)
+- Ask compliance questions: "Why did PaymentGateway fail?"
+- Ask impact questions: "What's affected by the firewall issue?"
+- Ask usage questions: "How do I export a report?"
+
+### Common Tasks
+- **View evidence**: Click the external link icon on any failure row
+- **Filter by framework**: Use the Framework dropdown on Dashboard
+- **Check specific system**: Use the System dropdown, then Refresh
+"""
+
+def detect_intent(question: str) -> str:
+    """Detect if user is asking about PACT usage vs compliance data."""
+    question_lower = question.lower()
+    
+    usage_keywords = [
+        "how do i", "how can i", "how to", "where is", "where do i",
+        "what does", "what is the", "help me", "show me how",
+        "tutorial", "guide", "button", "click", "navigate",
+        "use this", "use the", "get started", "simulate", "export"
+    ]
+    
+    for keyword in usage_keywords:
+        if keyword in question_lower:
+            return "usage"
+    
+    return "compliance"
+
 # OpenAI Setup
 try:
     from openai import OpenAI
@@ -106,42 +162,60 @@ async def chat_with_auditor(payload: Dict[str, str] = Body(...)):
     ollama_host = OLLAMA_HOST
     model_name = AI_MODEL
 
-    context_data = get_compliance_context()
+    # Detect intent and build appropriate context
+    intent = detect_intent(question)
     
-    threat_sparql = SPARQL_PREFIXES + f"""
-    SELECT ?vulnName ?controlName ?systemName ?verdict WHERE {{
-        ?control pact:mitigates ?vuln . ?vuln rdfs:label ?vulnName . ?control rdfs:label ?controlName .
-        GRAPH ?g {{ ?assess pact:validatesControl ?control ; pact:hasVerdict ?verdict ; pact:evaluatedEvidence ?ev . ?system pact:hasComponent ?ev ; rdfs:label ?systemName . }}
-    }} LIMIT {THREAT_CONTEXT_LIMIT}
-    """
-    threat_results = db.query(threat_sparql)
-    threat_data = []
-    for row in threat_results:
-        threat_data.append({
-            "vulnerability": str(row.vulnName),
-            "mitigated_by": str(row.controlName),
-            "system": str(row.systemName),
-            "status": str(row.verdict)
-        })
-    
-    combined_context = {
-        "compliance_failures": context_data,
-        "threat_mitigations": threat_data
-    }
-    context_str = json.dumps(combined_context, indent=2)
+    if intent == "usage":
+        # Usage questions get the documentation context
+        system_prompt = f"""You are PACT AI, a helpful assistant for the PACT compliance tool.
+The user is asking how to use the tool.
 
-    system_prompt = f"""
-    You are an expert Security Compliance Auditor named 'PACT AI'.
-    You have access to a semantic knowledge graph of the organization's security posture.
-    
-    CONTEXT DATA:
-    {context_str}
+PACT DOCUMENTATION:
+{USAGE_DOCS}
 
-    INSTRUCTIONS:
-    - Answer based ONLY on the provided context.
-    - If a system has failed a control, explain WHY and the IMPACT.
-    - Be concise and professional.
-    """
+INSTRUCTIONS:
+- Answer the user's question about how to use PACT
+- Be concise and give step-by-step instructions when appropriate
+- If you're not sure, say so and suggest they check the user guide
+"""
+    else:
+        # Compliance questions get the graph context
+        context_data = get_compliance_context()
+        
+        threat_sparql = SPARQL_PREFIXES + f"""
+        SELECT ?vulnName ?controlName ?systemName ?verdict WHERE {{
+            ?control pact:mitigates ?vuln . ?vuln rdfs:label ?vulnName . ?control rdfs:label ?controlName .
+            GRAPH ?g {{ ?assess pact:validatesControl ?control ; pact:hasVerdict ?verdict ; pact:evaluatedEvidence ?ev . ?system pact:hasComponent ?ev ; rdfs:label ?systemName . }}
+        }} LIMIT {THREAT_CONTEXT_LIMIT}
+        """
+        threat_results = db.query(threat_sparql)
+        threat_data = [
+            {
+                "vulnerability": str(row.vulnName),
+                "mitigated_by": str(row.controlName),
+                "system": str(row.systemName),
+                "status": str(row.verdict)
+            }
+            for row in threat_results
+        ]
+        
+        combined_context = {
+            "compliance_failures": context_data,
+            "threat_mitigations": threat_data
+        }
+        context_str = json.dumps(combined_context, indent=2)
+
+        system_prompt = f"""You are an expert Security Compliance Auditor named 'PACT AI'.
+You have access to a semantic knowledge graph of the organization's security posture.
+
+CONTEXT DATA:
+{context_str}
+
+INSTRUCTIONS:
+- Answer based ONLY on the provided context.
+- If a system has failed a control, explain WHY and the IMPACT.
+- Be concise and professional.
+"""
 
     # --- AI Provider Routing ---
     if api_key and api_key.startswith("sk-"):
