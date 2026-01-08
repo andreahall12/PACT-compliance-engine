@@ -274,7 +274,7 @@
         
         .kpi-label { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
         .kpi-value { font-size: 28px; font-weight: 700; font-family: var(--font-mono); }
-
+        
         /* Tables */
         .table-container { overflow-x: auto; }
         
@@ -458,7 +458,7 @@
         }
         
         .login-error.show { display: block; }
-
+        
         /* Chat Widget */
         #chat-widget {
             position: fixed;
@@ -531,6 +531,18 @@
         }
         
         .chat-message.ai p:last-child { margin-bottom: 0; }
+        
+        .typing-indicator {
+            display: inline-block;
+            animation: typing 1.2s ease-in-out infinite;
+            color: var(--text-secondary);
+            letter-spacing: 2px;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
         
         #chat-input-area {
             padding: 12px;
@@ -846,10 +858,10 @@
                 
                 <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
                     <i class="fas fa-sign-in-alt"></i> Sign In
-                </button>
+            </button>
             </form>
+            </div>
         </div>
-    </div>
 
     <!-- App View -->
     <div id="app-view" class="app-container hidden">
@@ -908,11 +920,11 @@
                 <div class="user-info">
                     <div class="user-name" id="user-name">Loading...</div>
                     <div class="user-role" id="user-role">-</div>
-                </div>
+            </div>
                 <button class="logout-btn" onclick="logout()" title="Logout">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
-            </div>
+                </div>
         </aside>
 
         <!-- Main Content -->
@@ -924,11 +936,11 @@
                     <div class="header-actions">
                         <button class="btn btn-secondary" onclick="loadDashboard()">
                             <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
+                    </button>
                         <button class="btn btn-primary" onclick="simulateEvent()">
                             <i class="fas fa-bolt"></i> Simulate Event
                         </button>
-                    </div>
+                </div>
                 </header>
                 
                 <div class="content-area">
@@ -937,40 +949,40 @@
                         <div class="kpi-card">
                             <div class="kpi-icon danger">
                                 <i class="fas fa-exclamation-triangle"></i>
-                            </div>
-                            <div>
+                        </div>
+                        <div>
                                 <div class="kpi-label">Active Failures</div>
                                 <div class="kpi-value" id="kpi-failures">-</div>
-                            </div>
                         </div>
+                    </div>
                         <div class="kpi-card">
                             <div class="kpi-icon warning">
                                 <i class="fas fa-history"></i>
-                            </div>
+                </div>
                             <div>
                                 <div class="kpi-label">Drift Detected</div>
                                 <div class="kpi-value" id="kpi-drift">-</div>
-                            </div>
+            </div>
                         </div>
                         <div class="kpi-card">
                             <div class="kpi-icon success">
                                 <i class="fas fa-shield-alt"></i>
-                            </div>
-                            <div>
+                        </div>
+                        <div>
                                 <div class="kpi-label">Threats Mitigated</div>
                                 <div class="kpi-value" id="kpi-threats">-</div>
-                            </div>
                         </div>
+                    </div>
                         <div class="kpi-card">
                             <div class="kpi-icon info">
                                 <i class="fas fa-file-alt"></i>
-                            </div>
+                </div>
                             <div>
                                 <div class="kpi-label">Documents</div>
                                 <div class="kpi-value" id="kpi-docs">-</div>
-                            </div>
+            </div>
                         </div>
-                    </div>
+                        </div>
                     
                     <!-- Dynamic Filters -->
                     <div class="filter-bar" id="compliance-filters">
@@ -979,13 +991,13 @@
                             <select class="filter-select" id="filter-system">
                                 <option value="">All Systems</option>
                             </select>
-                        </div>
+                    </div>
                         <div class="filter-group">
                             <span class="filter-label">Framework:</span>
                             <select class="filter-select" id="filter-framework">
                                 <option value="">All Frameworks</option>
                             </select>
-                        </div>
+                </div>
                         <div class="filter-group">
                             <span class="filter-label">Control:</span>
                             <select class="filter-select" id="filter-control">
@@ -999,15 +1011,15 @@
                             <button class="btn btn-primary" onclick="applyFilters()">
                                 <i class="fas fa-filter"></i> Apply
                             </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Blast Radius Table -->
-                    <div class="card">
+            </div>
+        </div>
+
+        <!-- Blast Radius Table -->
+        <div class="card">
                         <div class="card-header">
                             <span><i class="fas fa-bomb text-danger" style="margin-right: 8px;"></i>Critical Failures</span>
                             <span class="status-badge fail">Requires Attention</span>
-                        </div>
+            </div>
                         <div class="table-container">
                             <table>
                                 <thead>
@@ -1015,48 +1027,48 @@
                                         <th>Timestamp</th>
                                         <th>System / Process</th>
                                         <th>Control</th>
-                                        <th>Frameworks</th>
-                                        <th>Evidence</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
+                                <th>Frameworks</th>
+                                <th>Evidence</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
                                 <tbody id="blast-table-body">
                                     <tr>
                                         <td colspan="6" style="text-align: center; padding: 40px;">
                                             <div class="loading"><span></span><span></span><span></span></div>
                                         </td>
                                     </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
+                        </tbody>
+                    </table>
+            </div>
+        </div>
+
                     <!-- Drift Table -->
-                    <div class="card mt-4">
+        <div class="card mt-4">
                         <div class="card-header">
                             <span><i class="fas fa-wind text-warning" style="margin-right: 8px;"></i>Configuration Drift</span>
-                        </div>
+            </div>
                         <div class="table-container">
                             <table>
                                 <thead>
                                     <tr>
                                         <th>System / Control</th>
-                                        <th>Drifted Asset</th>
-                                        <th>Timeline</th>
+                                <th>Drifted Asset</th>
+                                <th>Timeline</th>
                                         <th>Action</th>
-                                    </tr>
-                                </thead>
+                            </tr>
+                        </thead>
                                 <tbody id="drift-table-body">
                                     <tr>
                                         <td colspan="4" style="text-align: center; padding: 40px;">
                                             <div class="loading"><span></span><span></span><span></span></div>
                                         </td>
                                     </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
+            </div>
+        </div>
             </div>
 
             <!-- Systems Page -->
@@ -1372,7 +1384,7 @@
             <button class="drawer-close" onclick="closeFindingDrawer()">
                 <i class="fas fa-times"></i>
             </button>
-        </div>
+                </div>
         <div class="drawer-body">
             <div class="drawer-section">
                 <div class="drawer-section-title">Status</div>
@@ -1390,9 +1402,9 @@
                     <div class="framework-tags" id="drawer-frameworks">
                         <span class="framework-tag">-</span>
                     </div>
-                </div>
-            </div>
-            
+        </div>
+    </div>
+
             <div class="drawer-section">
                 <div class="drawer-section-title">System Context</div>
                 <div class="drawer-field">
@@ -1403,14 +1415,14 @@
                     <div class="drawer-field-label">Business Process</div>
                     <div class="drawer-field-value" id="drawer-process">-</div>
                 </div>
-            </div>
+                </div>
             
             <div class="drawer-section">
                 <div class="drawer-section-title">Evidence</div>
                 <div class="drawer-field">
                     <div class="drawer-field-label">Asset</div>
                     <div class="drawer-field-value mono" id="drawer-asset">-</div>
-                </div>
+            </div>
                 <div class="drawer-field">
                     <div class="drawer-field-label">Detected At</div>
                     <div class="drawer-field-value" id="drawer-timestamp">-</div>
@@ -1421,9 +1433,9 @@
                         <i class="fas fa-external-link-alt"></i>
                         <span>View in source system</span>
                     </a>
-                </div>
-            </div>
-            
+        </div>
+    </div>
+
             <div class="drawer-section">
                 <div class="drawer-section-title">Raw Data</div>
                 <pre style="background: var(--bg-dark); padding: 12px; border-radius: 6px; font-size: 12px; overflow-x: auto; color: var(--text-secondary);" id="drawer-raw">-</pre>
@@ -1716,7 +1728,7 @@
                 showLogin();
             }
         }
-        
+
         async function apiFetch(path, options = {}) {
             const headers = new Headers(options.headers || {});
             if (accessToken) {
@@ -1899,17 +1911,17 @@
                     <td>
                         <div style="font-weight: 600;">${escapeHtml(row.process)}</div>
                         <div class="text-muted" style="font-size: 12px;"><i class="fas fa-server"></i> ${escapeHtml(row.system)}</div>
-                    </td>
-                    <td>
+                            </td>
+                            <td>
                         <span class="status-badge info">${escapeHtml((row.control || '').split(':')[0])}</span>
-                    </td>
+                            </td>
                     <td>${renderFrameworkBadges(row.impacted_frameworks)}</td>
                     <td><code class="text-mono text-danger">${escapeHtml(row.asset)}</code></td>
-                    <td>
+                            <td>
                         <a href="${escapeHtml(row.link || '#')}" target="_blank" class="btn btn-secondary btn-sm" onclick="event.stopPropagation();">
-                            <i class="fas fa-external-link-alt"></i>
-                        </a>
-                    </td>
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </td>
                 </tr>
             `).join('');
         }
@@ -1919,26 +1931,26 @@
             
             if (data.length === 0) {
                 tbody.innerHTML = renderEmptyRow(4, 'No configuration drift detected');
-                return;
-            }
+                    return;
+                }
             
             tbody.innerHTML = data.map(row => `
                 <tr>
                     <td>
                         <div style="font-weight: 600;">${escapeHtml(row.system)}</div>
                         <div class="text-muted" style="font-size: 12px;">${escapeHtml(row.control)}</div>
-                    </td>
+                            </td>
                     <td><code class="text-mono text-warning">${escapeHtml(row.asset)}</code></td>
                     <td>
                         <span class="text-success">${formatDateShort(row.previous_pass)}</span>
                         <i class="fas fa-arrow-right text-muted" style="margin: 0 8px;"></i>
                         <span class="text-danger">${formatDateShort(row.current_fail)}</span>
-                    </td>
-                    <td>
+                            </td>
+                            <td>
                         <a href="${escapeHtml(row.link || '#')}" target="_blank" class="btn btn-secondary btn-sm">
                             <i class="fas fa-search"></i>
-                        </a>
-                    </td>
+                                </a>
+                            </td>
                 </tr>
             `).join('');
         }
@@ -2296,7 +2308,7 @@
                     whatHappened = `Network configuration changed on port`;
                 } else if (eventType === 'config_change') {
                     whatHappened = `Configuration file <code>${escapeHtml(item.asset)}</code> was modified`;
-                } else {
+            } else {
                     whatHappened = `Asset <code>${escapeHtml(item.asset)}</code> state changed`;
                 }
                 
@@ -2552,7 +2564,7 @@
             const body = document.getElementById('chat-body');
             const text = input.value.trim();
             if (!text) return;
-            
+
             // Add user message
             const userMsg = document.createElement('div');
             userMsg.className = 'chat-message user';
@@ -2561,52 +2573,92 @@
             
             input.value = '';
             body.scrollTop = body.scrollHeight;
-            
-            // Add loading
-            const loadingMsg = document.createElement('div');
-            loadingMsg.className = 'chat-message ai';
-            loadingMsg.id = 'chat-loading';
-            loadingMsg.innerHTML = '<div class="loading"><span></span><span></span><span></span></div>';
-            body.appendChild(loadingMsg);
+
+            // Add AI message container with typing indicator
+            const aiMsg = document.createElement('div');
+            aiMsg.className = 'chat-message ai';
+            aiMsg.id = 'chat-streaming';
+            aiMsg.innerHTML = '<span class="typing-indicator">●●●</span>';
+            body.appendChild(aiMsg);
             body.scrollTop = body.scrollHeight;
+            
+            let fullResponse = '';
             
             try {
-                const res = await apiFetch('/chat', {
+                // Use streaming endpoint
+                const headers = new Headers({
+                    'Content-Type': 'application/json'
+                });
+                if (accessToken) {
+                    headers.set('Authorization', `Bearer ${accessToken}`);
+                }
+                
+                const res = await fetch(`${API_URL}/chat/stream`, {
                     method: 'POST',
-                    body: JSON.stringify({ question: text })
+                    headers,
+                    body: JSON.stringify({ question: text }),
+                    credentials: 'include'
                 });
                 
-                // Remove loading
-                const loader = document.getElementById('chat-loading');
-                if (loader) loader.remove();
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
                 
-                const data = await res.json();
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
                 
-                const aiMsg = document.createElement('div');
-                aiMsg.className = 'chat-message ai';
+                // Remove typing indicator on first chunk
+                let firstChunk = true;
                 
-                if (data && data.answer) {
-                    if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
-                        aiMsg.innerHTML = DOMPurify.sanitize(marked.parse(data.answer));
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') {
+                                // Streaming complete - render markdown
+                                if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+                                    aiMsg.innerHTML = DOMPurify.sanitize(marked.parse(fullResponse));
                     } else {
-                        aiMsg.textContent = data.answer;
+                                    aiMsg.textContent = fullResponse;
+                                }
+                                break;
+                            }
+                            
+                            try {
+                                const parsed = JSON.parse(data);
+                                if (parsed.chunk) {
+                                    if (firstChunk) {
+                                        aiMsg.innerHTML = '';
+                                        firstChunk = false;
+                                    }
+                                    fullResponse += parsed.chunk;
+                                    // Show plain text while streaming (faster than re-rendering markdown)
+                                    aiMsg.textContent = fullResponse;
+                                    body.scrollTop = body.scrollHeight;
+                                } else if (parsed.error) {
+                                    aiMsg.innerHTML = `<span class="text-danger">Error: ${parsed.error}</span>`;
+                                }
+            } catch (e) {
+                                // Ignore parse errors for partial chunks
+                            }
+                        }
                     }
-                } else {
-                    aiMsg.textContent = 'Error: No response received.';
                 }
                 
-                body.appendChild(aiMsg);
             } catch (e) {
-                const loader = document.getElementById('chat-loading');
-                if (loader) {
-                    loader.textContent = `Error: ${e.message}`;
-                    loader.classList.add('text-danger');
-                }
+                aiMsg.innerHTML = `<span class="text-danger">Error: ${e.message}</span>`;
             }
             
+            aiMsg.removeAttribute('id');
             body.scrollTop = body.scrollHeight;
         }
-        
+
         // =================================================================
         // Simulate Event
         // =================================================================

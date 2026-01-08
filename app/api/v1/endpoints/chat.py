@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Body
-from typing import Dict
+from fastapi.responses import StreamingResponse
+from typing import Dict, AsyncGenerator
 import json
 import os
 import httpx
@@ -298,4 +299,142 @@ INSTRUCTIONS:
                 return {"answer": data["choices"][0]["message"]["content"]}
         except Exception as e:
             return {"answer": f"Error calling Local AI: {str(e)}"}
+
+
+def build_system_prompt(question: str) -> str:
+    """Build the system prompt based on detected intent."""
+    intent = detect_intent(question)
+    
+    if intent == "usage":
+        return f"""You are PACT AI, a helpful assistant for the PACT compliance tool.
+The user is asking how to use the tool.
+
+PACT DOCUMENTATION:
+{USAGE_DOCS}
+
+INSTRUCTIONS:
+- Answer the user's question about how to use PACT
+- Be concise and give step-by-step instructions when appropriate
+- If you're not sure, say so and suggest they check the user guide
+"""
+    else:
+        context_data = get_compliance_context()
+        
+        threat_sparql = SPARQL_PREFIXES + f"""
+        SELECT ?vulnName ?controlName ?systemName ?verdict WHERE {{
+            ?control pact:mitigates ?vuln . ?vuln rdfs:label ?vulnName . ?control rdfs:label ?controlName .
+            GRAPH ?g {{ ?assess pact:validatesControl ?control ; pact:hasVerdict ?verdict ; pact:evaluatedEvidence ?ev . ?system pact:hasComponent ?ev ; rdfs:label ?systemName . }}
+        }} LIMIT {THREAT_CONTEXT_LIMIT}
+        """
+        threat_results = db.query(threat_sparql)
+        threat_data = [
+            {
+                "vulnerability": str(row.vulnName),
+                "mitigated_by": str(row.controlName),
+                "system": str(row.systemName),
+                "status": str(row.verdict)
+            }
+            for row in threat_results
+        ]
+        
+        combined_context = {
+            "compliance_failures": context_data,
+            "threat_mitigations": threat_data
+        }
+        context_str = json.dumps(combined_context, indent=2)
+
+        return f"""You are an expert Security Compliance Auditor named 'PACT AI'.
+You have access to a semantic knowledge graph of the organization's security posture.
+
+CONTEXT DATA:
+{context_str}
+
+INSTRUCTIONS:
+- Answer based ONLY on the provided context.
+- If a system has failed a control, explain WHY and the IMPACT.
+- Be concise and professional.
+"""
+
+
+async def stream_ollama_response(question: str, system_prompt: str) -> AsyncGenerator[str, None]:
+    """Stream response from Ollama as Server-Sent Events."""
+    ollama_host = OLLAMA_HOST
+    model_name = AI_MODEL
+    
+    try:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            async with client.stream(
+                "POST",
+                f"{ollama_host}/chat/completions",
+                json={
+                    "model": model_name,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": question}
+                    ],
+                    "stream": True
+                }
+            ) as response:
+                if response.status_code != 200:
+                    yield f"data: {json.dumps({'error': f'Ollama Error {response.status_code}'})}\n\n"
+                    yield "data: [DONE]\n\n"
+                    return
+                
+                async for line in response.aiter_lines():
+                    if line.startswith("data: "):
+                        data = line[6:]  # Remove "data: " prefix
+                        if data == "[DONE]":
+                            yield "data: [DONE]\n\n"
+                            break
+                        try:
+                            chunk = json.loads(data)
+                            if "choices" in chunk and len(chunk["choices"]) > 0:
+                                delta = chunk["choices"][0].get("delta", {})
+                                content = delta.get("content", "")
+                                if content:
+                                    yield f"data: {json.dumps({'chunk': content})}\n\n"
+                        except json.JSONDecodeError:
+                            continue
+                
+                yield "data: [DONE]\n\n"
+                
+    except Exception as e:
+        yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        yield "data: [DONE]\n\n"
+
+
+@router.post("/stream")
+async def chat_with_auditor_stream(payload: Dict[str, str] = Body(...)):
+    """
+    Stream AI responses as Server-Sent Events.
+    
+    Returns chunks as: data: {"chunk": "text"}\n\n
+    Final message: data: [DONE]\n\n
+    """
+    question = payload.get("question")
+    if not question:
+        raise HTTPException(status_code=400, detail="No question provided")
+    if len(question) > 4000:
+        raise HTTPException(status_code=400, detail="Question too long (max 4000 chars)")
+    
+    api_key = OPENAI_API_KEY
+    
+    # Build the system prompt
+    system_prompt = build_system_prompt(question)
+    
+    # For now, only Ollama supports streaming in this implementation
+    if api_key and api_key.startswith("sk-"):
+        # OpenAI mode - fall back to non-streaming for simplicity
+        # (Could be enhanced to use OpenAI streaming later)
+        result = await chat_with_auditor(payload)
+        async def single_chunk():
+            yield f"data: {json.dumps({'chunk': result['answer']})}\n\n"
+            yield "data: [DONE]\n\n"
+        return StreamingResponse(single_chunk(), media_type="text/event-stream")
+    else:
+        # Ollama streaming mode
+        return StreamingResponse(
+            stream_ollama_response(question, system_prompt),
+            media_type="text/event-stream"
+        )
 
