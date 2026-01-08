@@ -1,6 +1,6 @@
 # PACT: Policy Automation and Compliance Traceability
 
-**PACT watches your systems 24/7 and tells you—in real-time—when something breaks a compliance rule, who did it, and how to prove it to auditors.**
+**PACT watches your systems 24/7, or scans on-demand, and tells you—in real-time—when something breaks a compliance rule, who did it, and how to prove it to auditors.**
 
 No more chasing spreadsheets. No more "it was compliant last month." PACT gives you continuous, traceable proof of compliance.
 
