@@ -14,12 +14,12 @@ PACT can be extended to ingest VEX (Vulnerability Exploitability eXchange) files
 
 ### 1.1 Goal
 
-Enable PACT to answer: **"Is CVE-X mitigated by how our OpenShift cluster is configured?"**
+Enable PACT to answer: **"Is CVE-X mitigated by how our [product] cluster is configured?"**
 
 ### 1.2 Data Flow
 
 \`\`\`
-VEX Files (CSAF/OpenVEX) + Config Data (OpenShift) → PACT Correlation → Mitigation Verdict
+VEX Files (CSAF/OpenVEX) + Config Data ([product]) → PACT Correlation → Mitigation Verdict
 \`\`\`
 
 ### 1.3 New Components
@@ -33,7 +33,7 @@ VEX Files (CSAF/OpenVEX) + Config Data (OpenShift) → PACT Correlation → Miti
 
 ---
 
-## Part 2: Recommendations for Improving Red Hat VEX Data
+## Part 2: Recommendations for Improving VEX Data
 
 ### 2.1 The Problem
 
@@ -55,12 +55,12 @@ Add a new field mitigation_conditions with machine-readable data:
 }
 \`\`\`
 
-### 2.3 Benefits for Red Hat
+### 2.3 Benefits
 
 - Automated triage - customers filter CVEs by their config
 - Reduced support tickets - "Am I affected?" answered by tooling
 - Compliance automation - prove mitigation status to auditors
-- ACS integration - StackRox could consume for policy enforcement
+- Security scanner integration - scanners could consume for policy enforcement
 
 ### 2.4 Implementation Path
 
@@ -70,11 +70,11 @@ Add a new field mitigation_conditions with machine-readable data:
 
 ---
 
-## Part 3: Integration with Red Hat Tools
+## Part 3: Integration with Security Tools
 
-- **Compliance Operator**: Consume config check results
-- **ACS/StackRox**: Auto-create policies for unmitigated CVEs
-- **Conform**: Build pipeline logs as evidence
+- **Compliance scanning tools**: Consume config check results
+- **Container security platforms**: Auto-create policies for unmitigated CVEs
+- **Build pipeline tooling**: Build pipeline logs as evidence
 
 ---
 
@@ -85,4 +85,4 @@ Add a new field mitigation_conditions with machine-readable data:
 | **PACT Integration** | New VEX ingester + condition extractor + config mapper |
 | **VEX Data Improvement** | Add structured mitigation_conditions field |
 | **Value Proposition** | Automated "Am I affected?" answers |
-| **Quick Win** | Pilot with 10-20 high-profile OpenShift CVEs |
+| **Quick Win** | Pilot with 10-20 high-profile [product] CVEs |
