@@ -1,6 +1,6 @@
 # PACT: Policy Automation and Compliance Traceability
 
-**PACT watches your systems 24/7, or scans on-demand, and tells you—in real-time—when something breaks a compliance rule, who did it, and how to prove it to auditors.**
+**PACT watches your systems 24/7 and tells you—in real-time—when something breaks a compliance rule, who did it, and how to prove it to auditors.**
 
 No more chasing spreadsheets. No more "it was compliant last month." PACT gives you continuous, traceable proof of compliance.
 
@@ -78,6 +78,20 @@ For testing and demonstration, these accounts are pre-configured:
 | **Product Manager** | `pm@pact.io` | `ProductMgr@123!` |
 
 > **Warning:** These are TEST credentials only. In production, create your own admin with a strong password.
+
+### What Each Role Can Do
+
+| Role | Can View | Can Modify | Special Abilities |
+|------|----------|------------|-------------------|
+| **Admin** | Everything | Everything | Create users, manage settings, full system control |
+| **Compliance Officer** | Everything | Systems, policies, schedules | Run scans, approve exceptions, generate reports |
+| **Internal Auditor** | Everything | Documents only | Generate reports, request evidence, AI Auditor access |
+| **External Auditor** | Audit scope only | Nothing | Generate reports, request evidence (limited scope) |
+| **Security Engineer** | Compliance, systems | Incidents | Run scans, execute remediation, request exceptions |
+| **CISO** | Everything | Nothing | Executive dashboard, generate reports |
+| **System Owner** | Own systems | Own systems | Request exceptions for owned systems |
+| **Product Manager** | Products, compliance | Own products | Approve releases |
+| **Developer** | Compliance status | Nothing | AI Auditor access (ask questions) |
 
 ### Quick Start (3 Steps)
 
