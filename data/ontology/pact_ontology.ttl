@@ -112,3 +112,47 @@ pact:evidenceSourceUrl a owl:DatatypeProperty ;
     rdfs:domain uco-core:UcoObject ;
     rdfs:range xsd:anyURI ;
     rdfs:comment "A direct link to the technical proof (e.g., Splunk log link, AWS Config resource link)." .
+
+# ==========================================
+# 5. VEX LAYER (Vendor Exploitability)
+# ==========================================
+
+pact:VEXStatement a owl:Class ;
+    rdfs:label "VEX Statement" ;
+    rdfs:comment "A vendor statement about vulnerability exploitability status for a specific product." .
+
+pact:regardsVulnerability a owl:ObjectProperty ;
+    rdfs:domain pact:VEXStatement ;
+    rdfs:range pact:Vulnerability ;
+    rdfs:label "Regards Vulnerability" ;
+    rdfs:comment "Links a VEX statement to the vulnerability it describes." .
+
+pact:regardsSystem a owl:ObjectProperty ;
+    rdfs:domain pact:VEXStatement ;
+    rdfs:range pact:System ;
+    rdfs:label "Regards System" ;
+    rdfs:comment "Links a VEX statement to the PACT system it applies to (via SBOM correlation)." .
+
+pact:hasVEXStatus a owl:DatatypeProperty ;
+    rdfs:domain pact:VEXStatement ;
+    rdfs:range xsd:string ;
+    rdfs:label "VEX Status" ;
+    rdfs:comment "The vendor-declared exploitability status: affected, not_affected, fixed, or under_investigation." .
+
+pact:hasJustification a owl:DatatypeProperty ;
+    rdfs:domain pact:VEXStatement ;
+    rdfs:range xsd:string ;
+    rdfs:label "Justification" ;
+    rdfs:comment "The vendor-provided justification for a not_affected status." .
+
+pact:hasActionStatement a owl:DatatypeProperty ;
+    rdfs:domain pact:VEXStatement ;
+    rdfs:range xsd:string ;
+    rdfs:label "Action Statement" ;
+    rdfs:comment "The recommended remediation action from the vendor." .
+
+pact:fromVEXDocument a owl:DatatypeProperty ;
+    rdfs:domain pact:VEXStatement ;
+    rdfs:range xsd:string ;
+    rdfs:label "From VEX Document" ;
+    rdfs:comment "The document_id of the VEX document this statement was extracted from." .

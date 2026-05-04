@@ -9,7 +9,7 @@ UCO_OBS = Namespace("https://ontology.unifiedcyberontology.org/uco/observable/")
 UCO_CORE = Namespace("https://ontology.unifiedcyberontology.org/uco/core/")
 SH = Namespace("http://www.w3.org/ns/shacl#")
 
-from app.core.config import DB_FILE, FRAMEWORK_MAPPINGS_FILE, THREAT_MAPPINGS_FILE
+from app.core.config import DB_FILE, CONTROLS_FILE, FRAMEWORK_MAPPINGS_FILE, THREAT_MAPPINGS_FILE
 
 class PACTStore:
     def __init__(self, storage_file=str(DB_FILE)):
@@ -34,7 +34,8 @@ class PACTStore:
         self.ds.bind("uco-core", UCO_CORE)
         self.ds.bind("sh", SH)
 
-        # Load Global Knowledge (Frameworks + Threats)
+        # Load Global Knowledge (Controls, Frameworks, Threats)
+        self._load_ttl_if_exists(str(CONTROLS_FILE))
         self._load_ttl_if_exists(str(FRAMEWORK_MAPPINGS_FILE))
         self._load_ttl_if_exists(str(THREAT_MAPPINGS_FILE))
 
@@ -75,6 +76,16 @@ class PACTStore:
                 target_graph.add((s, p, o))
         
         # Save outside the main lock to avoid holding it during I/O
+        self.save()
+
+    def replace_graph(self, graph_uri, graph_data):
+        """Remove all triples in named graph, then add new ones (thread-safe)."""
+        with self.lock:
+            uri = URIRef(graph_uri)
+            target_graph = self.ds.graph(uri)
+            target_graph.remove((None, None, None))
+            for s, p, o in graph_data:
+                target_graph.add((s, p, o))
         self.save()
 
     def query(self, sparql_query):

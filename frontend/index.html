@@ -17,8 +17,11 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
     
-    <!-- Mermaid Diagrams -->
+    <!-- Mermaid Diagrams (used by Config Drift) -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+    <!-- vis.js Network (interactive blast radius graph) -->
+    <script src="https://cdn.jsdelivr.net/npm/vis-network@9/standalone/umd/vis-network.min.js"></script>
 
     <style>
         :root {
@@ -274,6 +277,7 @@
         
         .kpi-label { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
         .kpi-value { font-size: 28px; font-weight: 700; font-family: var(--font-mono); }
+        .kpi-hint { font-size: 11px; color: var(--text-secondary); margin-top: 2px; opacity: 0.7; }
 
         /* Tables */
         .table-container { overflow-x: auto; }
@@ -363,6 +367,40 @@
         .btn-danger:hover { background: rgba(248, 81, 73, 0.25); }
         
         .btn-sm { padding: 6px 12px; font-size: 13px; }
+
+        .blast-layer-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 6px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .blast-layer-check:hover {
+            border-color: var(--lc, var(--accent-cyan));
+            background: rgba(255,255,255,0.03);
+        }
+        .blast-layer-check input[type="checkbox"] {
+            accent-color: var(--lc, var(--accent-cyan));
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        .blast-layer-check:has(input:checked) {
+            border-color: var(--lc);
+            background: color-mix(in srgb, var(--lc) 12%, transparent);
+        }
+        .blast-check-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .blast-layer-check:has(input:checked) .blast-check-label {
+            color: var(--lc);
+        }
 
         /* Form Elements */
         .form-group { margin-bottom: 20px; }
@@ -869,19 +907,30 @@
                 
                 <div class="nav-label" style="margin-top: 16px;">Compliance</div>
                 <a href="#" class="nav-item" data-page="blast-radius">
-                    <i class="fas fa-bomb"></i>
-                    <span>Blast Radius</span>
+                    <i class="fas fa-project-diagram"></i>
+                    <span>Impact Map</span>
                     <span class="nav-badge" id="nav-failures">0</span>
                 </a>
                 <a href="#" class="nav-item" data-page="drift">
                     <i class="fas fa-wind"></i>
-                    <span>Config Drift</span>
+                    <span>Drift Timeline</span>
                 </a>
                 <a href="#" class="nav-item" data-page="frameworks">
                     <i class="fas fa-book"></i>
                     <span>Frameworks</span>
                 </a>
                 
+                <div class="nav-label" style="margin-top: 16px;">Security</div>
+                <a href="#" class="nav-item" data-page="vulnerabilities">
+                    <i class="fas fa-bug"></i>
+                    <span>Vulnerabilities</span>
+                    <span class="nav-badge" id="nav-open-cves" style="background: var(--danger);">0</span>
+                </a>
+                <a href="#" class="nav-item" data-page="posture">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Security Posture</span>
+                </a>
+
                 <div class="nav-label" style="margin-top: 16px;">Assets</div>
                 <a href="#" class="nav-item" data-page="systems">
                     <i class="fas fa-server"></i>
@@ -934,40 +983,54 @@
                 <div class="content-area">
                     <!-- KPIs -->
                     <div class="kpi-grid">
-                        <div class="kpi-card">
+                        <div class="kpi-card" title="Systems where a required security control is not being followed right now">
                             <div class="kpi-icon danger">
                                 <i class="fas fa-exclamation-triangle"></i>
                             </div>
                             <div>
                                 <div class="kpi-label">Active Failures</div>
                                 <div class="kpi-value" id="kpi-failures">-</div>
+                                <div class="kpi-hint">Rules not being followed</div>
                             </div>
                         </div>
-                        <div class="kpi-card">
+                        <div class="kpi-card" title="Systems that were compliant before but have since fallen out of compliance">
                             <div class="kpi-icon warning">
                                 <i class="fas fa-history"></i>
                             </div>
                             <div>
                                 <div class="kpi-label">Drift Detected</div>
                                 <div class="kpi-value" id="kpi-drift">-</div>
+                                <div class="kpi-hint">Systems that regressed</div>
                             </div>
                         </div>
-                        <div class="kpi-card">
+                        <div class="kpi-card" onclick="navigateTo('posture')" style="cursor: pointer;" title="Known vulnerabilities that have a working security control protecting against them">
                             <div class="kpi-icon success">
                                 <i class="fas fa-shield-alt"></i>
                             </div>
                             <div>
-                                <div class="kpi-label">Threats Mitigated</div>
+                                <div class="kpi-label">CVEs Mitigated</div>
                                 <div class="kpi-value" id="kpi-threats">-</div>
+                                <div class="kpi-hint">Vulnerabilities with active protection</div>
                             </div>
                         </div>
-                        <div class="kpi-card">
-                            <div class="kpi-icon info">
-                                <i class="fas fa-file-alt"></i>
+                        <div class="kpi-card" onclick="navigateTo('vulnerabilities')" style="cursor: pointer;" title="Known vulnerabilities with no control or fix in place -- these are the highest-risk items">
+                            <div class="kpi-icon danger">
+                                <i class="fas fa-bug"></i>
                             </div>
                             <div>
-                                <div class="kpi-label">Documents</div>
-                                <div class="kpi-value" id="kpi-docs">-</div>
+                                <div class="kpi-label">Unmitigated CVEs</div>
+                                <div class="kpi-value" id="kpi-open-cves">0</div>
+                                <div class="kpi-hint">No protection in place</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card" onclick="navigateTo('posture')" style="cursor: pointer;" title="Systems passing all compliance checks but still exposed to unpatched vulnerabilities -- compliance alone doesn't mean secure">
+                            <div class="kpi-icon" style="background: rgba(245,158,11,0.1); color: #f59e0b;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div>
+                                <div class="kpi-label">Compliant but Vulnerable</div>
+                                <div class="kpi-value" id="kpi-comp-not-sec">-</div>
+                                <div class="kpi-hint">Passing audits, still at risk</div>
                             </div>
                         </div>
                     </div>
@@ -1005,17 +1068,20 @@
                     <!-- Blast Radius Table -->
                     <div class="card">
                         <div class="card-header">
-                            <span><i class="fas fa-bomb text-danger" style="margin-right: 8px;"></i>Critical Failures</span>
+                            <span><i class="fas fa-bomb text-danger" style="margin-right: 8px;"></i>Where Things Are Failing</span>
                             <span class="status-badge fail">Requires Attention</span>
+                        </div>
+                        <div style="padding: 10px 16px 0; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                            Each row is a security rule that is currently not being followed. Click a row for details.
                         </div>
                         <div class="table-container">
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>Timestamp</th>
+                                        <th>When</th>
                                         <th>System / Process</th>
-                                        <th>Control</th>
-                                        <th>Frameworks</th>
+                                        <th>Security Rule</th>
+                                        <th>What This Means</th>
                                         <th>Evidence</th>
                                         <th>Action</th>
                                     </tr>
@@ -1034,7 +1100,10 @@
                     <!-- Drift Table -->
                     <div class="card mt-4">
                         <div class="card-header">
-                            <span><i class="fas fa-wind text-warning" style="margin-right: 8px;"></i>Configuration Drift</span>
+                            <span><i class="fas fa-wind text-warning" style="margin-right: 8px;"></i>Systems That Regressed</span>
+                        </div>
+                        <div style="padding: 10px 16px 0; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                            These systems were previously compliant but something changed. The timeline shows when they went from passing to failing.
                         </div>
                         <div class="table-container">
                             <table>
@@ -1097,6 +1166,8 @@
                                         <th>Status</th>
                                         <th>Environment</th>
                                         <th>Criticality</th>
+                                        <th>SBOM</th>
+                                        <th>CVEs</th>
                                         <th>Owner</th>
                                         <th>Actions</th>
                                     </tr>
@@ -1213,10 +1284,251 @@
                 </div>
             </div>
 
+            <!-- Vulnerabilities Page -->
+            <div id="page-vulnerabilities" class="page">
+                <header class="header">
+                    <h1 class="header-title">Vulnerabilities</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" onclick="loadVulnerabilities()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </header>
+                
+                <div class="content-area">
+                    <!-- Explainer Banner -->
+                    <div class="card" style="padding: 16px 20px; margin-bottom: 20px; border-left: 4px solid #818cf8; background: rgba(129,140,248,0.05);">
+                        <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">
+                            <i class="fas fa-info-circle" style="color: #818cf8; margin-right: 6px;"></i>How to Read This Page
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+                            <strong>VEX Status</strong> = what the software vendor says about a vulnerability (e.g., "we fixed it" or "it doesn't affect our product").<br>
+                            <strong>Combined Verdict</strong> = PACT's own assessment that also checks whether your security controls are actually mitigating the vulnerability in <em>your environment</em>.<br>
+                            A CVE can be "affected" per VEX but "mitigated" in practice if you have a passing security control that covers it.
+                        </div>
+                    </div>
+
+                    <!-- VEX Summary Cards -->
+                    <div class="kpi-grid" id="vex-summary-cards">
+                        <div class="kpi-card" title="Vulnerabilities that the vendor says affect the product and that have no control or fix protecting them">
+                            <div class="kpi-icon danger"><i class="fas fa-exclamation-circle"></i></div>
+                            <div>
+                                <div class="kpi-label">Affected (Unmitigated)</div>
+                                <div class="kpi-value" id="vex-affected">0</div>
+                                <div class="kpi-hint">No protection in place</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card" title="Vulnerabilities where the vendor confirms the product is not actually affected">
+                            <div class="kpi-icon success"><i class="fas fa-check-circle"></i></div>
+                            <div>
+                                <div class="kpi-label">Not Affected</div>
+                                <div class="kpi-value" id="vex-not-affected">0</div>
+                                <div class="kpi-hint">Vendor says not at risk</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card" title="Vulnerabilities that have been patched in a newer version of the software">
+                            <div class="kpi-icon info"><i class="fas fa-wrench"></i></div>
+                            <div>
+                                <div class="kpi-label">Fixed</div>
+                                <div class="kpi-value" id="vex-fixed">0</div>
+                                <div class="kpi-hint">Patch available or applied</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card" title="Vulnerabilities still being analyzed -- status not yet determined">
+                            <div class="kpi-icon warning"><i class="fas fa-search"></i></div>
+                            <div>
+                                <div class="kpi-label">Under Investigation</div>
+                                <div class="kpi-value" id="vex-investigating">0</div>
+                                <div class="kpi-hint">Still being evaluated</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload Section -->
+                    <div class="card" style="margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 12px;">Upload VEX / SBOM Files</h3>
+                        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 250px;">
+                                <label class="filter-label">VEX Document (CSAF or OpenVEX JSON)</label>
+                                <input type="file" id="vex-file-input" accept=".json" style="margin-top: 4px;">
+                                <button class="btn btn-primary btn-sm" style="margin-top: 8px;" onclick="uploadVEX()">
+                                    <i class="fas fa-upload"></i> Ingest VEX
+                                </button>
+                            </div>
+                            <div style="flex: 1; min-width: 250px;">
+                                <label class="filter-label">SBOM (CycloneDX or SPDX JSON)</label>
+                                <select class="filter-select" id="sbom-system-picker" style="margin-bottom: 4px;">
+                                    <option value="">Select system...</option>
+                                </select>
+                                <input type="file" id="sbom-file-input" accept=".json" style="margin-top: 4px;">
+                                <button class="btn btn-primary btn-sm" style="margin-top: 8px;" onclick="uploadSBOM()">
+                                    <i class="fas fa-upload"></i> Upload SBOM
+                                </button>
+                            </div>
+                        </div>
+                        <div id="upload-status" style="margin-top: 8px; font-size: 13px;"></div>
+                    </div>
+
+                    <!-- VEX Statements Table -->
+                    <div class="card">
+                        <h3 style="margin-bottom: 4px;">Vulnerability Details</h3>
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Each row is a specific CVE and what we know about it from vendor data (VEX) and your own controls.</div>
+                        <div class="filter-bar" style="margin-bottom: 12px;">
+                            <div class="filter-group">
+                                <span class="filter-label">Status:</span>
+                                <select class="filter-select" id="vex-status-filter" onchange="loadVEXStatements()">
+                                    <option value="">All</option>
+                                    <option value="affected">Affected</option>
+                                    <option value="not_affected">Not Affected</option>
+                                    <option value="fixed">Fixed</option>
+                                    <option value="under_investigation">Under Investigation</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <span class="filter-label">CVE:</span>
+                                <input type="text" class="form-input" style="width: 180px;" placeholder="CVE-2021-..." id="vex-cve-filter">
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="loadVEXStatements()">
+                                <i class="fas fa-filter"></i> Filter
+                            </button>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>CVE</th>
+                                        <th>Product</th>
+                                        <th>VEX Status</th>
+                                        <th>Combined Verdict</th>
+                                        <th>Mitigating Control</th>
+                                        <th>System</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vex-statements-body">
+                                    <tr><td colspan="6" class="text-muted" style="text-align: center; padding: 40px;">No VEX data ingested yet. Upload a VEX file to get started.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- VEX Documents Table -->
+                    <div class="card" style="margin-top: 20px;">
+                        <h3 style="margin-bottom: 12px;">Ingested VEX Documents</h3>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Document ID</th>
+                                        <th>Format</th>
+                                        <th>Author</th>
+                                        <th>Published</th>
+                                        <th>Statements</th>
+                                        <th>Ingested</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vex-documents-body">
+                                    <tr><td colspan="6" class="text-muted" style="text-align: center; padding: 40px;">No VEX documents</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Posture Page -->
+            <div id="page-posture" class="page">
+                <header class="header">
+                    <h1 class="header-title">Security Posture</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" onclick="loadSecurityPosture()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </header>
+                <div class="content-area" style="padding: 20px;">
+                    <!-- Explainer Banner -->
+                    <div class="card" style="padding: 20px; margin-bottom: 24px; border-left: 4px solid #818cf8; background: rgba(129,140,248,0.05);">
+                        <div style="font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">
+                            <i class="fas fa-lightbulb" style="color: #fbbf24; margin-right: 8px;"></i>Does compliance = security?
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.7;">
+                            <strong>Just because a system passes all its compliance checks doesn't mean it's safe.</strong>
+                            A system can follow every rule in the book but still have unpatched software with known vulnerabilities.
+                            This page cross-references your <em>compliance controls</em> (the rules) with <em>real-world vulnerabilities</em> (CVEs) to show you where the gaps are.
+                            Each system falls into one of four categories below.
+                        </div>
+                    </div>
+
+                    <!-- Posture Quadrant Cards -->
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;" id="posture-quadrant-cards">
+                        <div class="card" style="border-left: 4px solid var(--success); padding: 20px;" title="These systems are in the best shape -- all security rules are being followed and there are no known software vulnerabilities.">
+                            <div style="font-size: 28px; font-weight: 700; color: var(--success);" id="posture-secure-compliant">-</div>
+                            <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-top: 4px;">Secure & Compliant</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">Following the rules AND no known vulnerabilities. The ideal state.</div>
+                        </div>
+                        <div class="card" style="border-left: 4px solid #f59e0b; padding: 20px;" title="These systems pass compliance audits but have unpatched vulnerabilities. Think of it like having a locked front door but an open window.">
+                            <div style="font-size: 28px; font-weight: 700; color: #f59e0b;" id="posture-compliant-vulnerable">-</div>
+                            <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-top: 4px;">Compliant but Vulnerable</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">Passing audits, but exposed to known vulnerabilities that no control covers.</div>
+                        </div>
+                        <div class="card" style="border-left: 4px solid var(--danger); padding: 20px;" title="The most urgent: a security rule exists to protect against a known vulnerability, but that rule is not being followed. Fix these first.">
+                            <div style="font-size: 28px; font-weight: 700; color: var(--danger);" id="posture-noncompliant-cve">-</div>
+                            <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-top: 4px;">Non-compliant + CVE Risk</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;"><strong style="color: var(--danger);">Highest priority.</strong> A security rule that protects against a real vulnerability is failing.</div>
+                        </div>
+                        <div class="card" style="border-left: 4px solid #6b7280; padding: 20px;" title="These systems have compliance failures, but those failures aren't directly connected to any known vulnerability.">
+                            <div style="font-size: 28px; font-weight: 700; color: #6b7280;" id="posture-noncompliant-nocve">-</div>
+                            <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-top: 4px;">Non-compliant (No CVE Link)</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">Compliance failures exist but aren't tied to a known vulnerability. Still needs attention.</div>
+                        </div>
+                    </div>
+
+                    <!-- Critical Gaps Callout -->
+                    <div class="card" style="padding: 20px; margin-bottom: 24px; border: 1px solid var(--danger); background: rgba(239,68,68,0.05);" id="posture-critical-gaps-card">
+                        <h3 style="margin: 0 0 8px 0; color: var(--danger); font-size: 15px;"><i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i>Fix These First</h3>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5;">
+                            These are your highest-priority items. In each case, a security rule exists specifically to protect against a known vulnerability &mdash; but that rule is currently <strong>not being followed</strong>.
+                            Until these are fixed, the vulnerability has no protection.
+                        </div>
+                        <table>
+                            <thead><tr><th>System</th><th>CVE</th><th>Control</th><th>Control Status</th><th>Note</th></tr></thead>
+                            <tbody id="posture-critical-gaps-body">
+                                <tr><td colspan="5" class="text-muted" style="text-align:center;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Per-System Posture Table -->
+                    <div class="card" style="padding: 20px;">
+                        <h3 style="margin: 0 0 4px 0; font-size: 15px;">System-by-System Breakdown</h3>
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">How each system scores on compliance rules vs. real vulnerability exposure.</div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>System</th>
+                                        <th>Product</th>
+                                        <th>Compliance</th>
+                                        <th>CVEs</th>
+                                        <th>Mitigated</th>
+                                        <th>Unmitigated</th>
+                                        <th>Uncovered</th>
+                                        <th>Posture</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="posture-systems-body">
+                                    <tr><td colspan="8" class="text-muted" style="text-align:center;">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Blast Radius Page -->
             <div id="page-blast-radius" class="page">
                 <header class="header">
-                    <h1 class="header-title">Blast Radius Analysis</h1>
+                    <h1 class="header-title">Impact Visualization</h1>
                     <div class="header-actions">
                         <button class="btn btn-secondary" onclick="loadBlastRadius()">
                             <i class="fas fa-sync-alt"></i> Refresh
@@ -1224,31 +1536,152 @@
                     </div>
                 </header>
                 <div class="content-area">
-                    <!-- Legend -->
-                    <div class="card" style="margin-bottom: 20px;">
-                        <div class="card-header">
-                            <span><i class="fas fa-info-circle"></i> How to Read This Diagram</span>
+                    <!-- How To Read Guide (collapsible) -->
+                    <div class="card" style="margin-bottom: 16px; border-left: 4px solid #818cf8; background: rgba(129,140,248,0.03);">
+                        <div class="card-header" style="cursor: pointer;" onclick="const c=this.nextElementSibling; c.style.display=c.style.display==='none'?'block':'none'; this.querySelector('.fa-chevron-down, .fa-chevron-up').classList.toggle('fa-chevron-up'); this.querySelector('.fa-chevron-down, .fa-chevron-up').classList.toggle('fa-chevron-down');">
+                            <span><i class="fas fa-question-circle" style="color: #818cf8; margin-right: 6px;"></i>How to Read This Graph</span>
+                            <i class="fas fa-chevron-down" style="color: var(--text-secondary); font-size: 12px;"></i>
                         </div>
-                        <div style="padding: 16px; display: flex; gap: 24px; flex-wrap: wrap; font-size: 13px;">
-                            <div><span style="color: #f87171;">●</span> <strong>Violation Event</strong> - The triggering compliance failure</div>
-                            <div><span style="color: #60a5fa;">●</span> <strong>System</strong> - Affected information system</div>
-                            <div><span style="color: #a78bfa;">●</span> <strong>Business Process</strong> - Impacted business operation</div>
-                            <div><span style="color: #34d399;">●</span> <strong>Framework</strong> - Compliance frameworks affected</div>
+                        <div style="padding: 16px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; display: none;">
+                            <p style="margin: 0 0 10px;"><strong style="color: var(--text-primary);">This graph shows how compliance failures and vulnerabilities connect across your systems.</strong></p>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <div>
+                                    <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;"><span style="color: #818cf8;">&#9632;</span> Products</div>
+                                    <div style="font-size: 12px;">Top-level groupings like "OpenShift" or "RHEL" that contain one or more systems.</div>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;"><span style="color: #60a5fa;">&#9632;</span> Systems</div>
+                                    <div style="font-size: 12px;">Click a system box to expand it and see its components, violations, and CVEs.</div>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;"><span style="color: #f87171;">&#9650;</span> Violations</div>
+                                    <div style="font-size: 12px;">Red triangles = a security rule is currently being broken on this system.</div>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;"><span style="color: #fbbf24;">&#9632;</span> Components</div>
+                                    <div style="font-size: 12px;">Software packages installed on the system (from SBOM data).</div>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;"><span style="color: #10b981;">&#9679;</span> CVEs</div>
+                                    <div style="font-size: 12px;">Known vulnerabilities, color-coded: green = mitigated, red = unmitigated, amber = fix available.</div>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;"><span style="color: #f59e0b;">&#9632;</span> Critical Gaps</div>
+                                    <div style="font-size: 12px;">Amber boxes appear when a CVE has a mitigating control but that control is failing. Fix these first.</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <!-- Mermaid Diagram -->
+
+                    <!-- Layer Checkboxes + Legend -->
+                    <div class="card" style="margin-bottom: 20px;">
+                        <div class="card-header">
+                            <span><i class="fas fa-layer-group"></i> Show Layers</span>
+                            <span style="font-size: 12px; color: var(--text-secondary);">Select one or more to compose your view</span>
+                        </div>
+                        <div style="padding: 16px;">
+                            <div style="display: flex; gap: 20px; flex-wrap: wrap;" id="blast-layer-checkboxes">
+                                <label class="blast-layer-check" style="--lc: #f87171;">
+                                    <input type="checkbox" checked data-layer="compliance" onchange="onLayerChange()">
+                                    <span class="blast-check-label"><i class="fas fa-exclamation-triangle"></i> Compliance Failures</span>
+                                </label>
+                                <label class="blast-layer-check" style="--lc: #a78bfa;">
+                                    <input type="checkbox" checked data-layer="impact" onchange="onLayerChange()">
+                                    <span class="blast-check-label"><i class="fas fa-sitemap"></i> Business Impact</span>
+                                </label>
+                                <label class="blast-layer-check" style="--lc: #fbbf24;">
+                                    <input type="checkbox" checked data-layer="sbom" onchange="onLayerChange()">
+                                    <span class="blast-check-label"><i class="fas fa-cubes"></i> Software Products</span>
+                                </label>
+                                <label class="blast-layer-check" style="--lc: #10b981;">
+                                    <input type="checkbox" checked data-layer="vex" onchange="onLayerChange()">
+                                    <span class="blast-check-label"><i class="fas fa-shield-alt"></i> Vulnerability Status</span>
+                                </label>
+                            </div>
+                            <div style="display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary); border-top: 1px solid var(--border); padding-top: 10px; margin-top: 14px;">
+                                <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f87171;margin-right:4px;vertical-align:middle;"></span>Violation</span>
+                                <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#60a5fa;margin-right:4px;vertical-align:middle;"></span>System</span>
+                                <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#a78bfa;margin-right:4px;vertical-align:middle;"></span>Process</span>
+                                <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#34d399;margin-right:4px;vertical-align:middle;"></span>Framework</span>
+                                <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#818cf8;margin-right:4px;vertical-align:middle;"></span>Product</span>
+                                <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#fbbf24;margin-right:4px;vertical-align:middle;"></span>Component</span>
+                            </div>
+                            <div style="display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary); padding-top: 8px;">
+                                <strong style="color:var(--text-primary);font-size:11px;">CVE Verdict:</strong>
+                                <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;margin-right:4px;vertical-align:middle;"></span>Mitigated by Control</span>
+                                <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#60a5fa;margin-right:4px;vertical-align:middle;"></span>Not Affected (vendor)</span>
+                                <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:4px;vertical-align:middle;"></span>Unmitigated</span>
+                                <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f59e0b;margin-right:4px;vertical-align:middle;"></span>Fix Available</span>
+                                <span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#92400e;border:2px solid #f59e0b;margin-right:4px;vertical-align:middle;"></span>Critical Gap (control fails but should mitigate CVE)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Graph -->
                     <div class="card">
                         <div class="card-header">
                             <span><i class="fas fa-project-diagram"></i> Impact Visualization</span>
                             <span class="status-badge info" id="blast-event-count">0 events</span>
                         </div>
-                        <div id="blast-diagram-container" style="padding: 24px; min-height: 400px; overflow-x: auto; background: var(--bg-dark);">
-                            <div class="loading"><span></span><span></span><span></span></div>
+                        <div style="padding: 4px; position: relative;">
+                            <div id="blast-graph-container" style="height: 550px; background: var(--bg-dark); border-radius: 8px;"></div>
+                            <div id="blast-graph-hint" style="position:absolute;bottom:12px;right:16px;font-size:11px;color:var(--text-secondary);pointer-events:none;">
+                                Scroll to zoom &middot; Drag to pan &middot; Click a system box to see what's inside
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- Summary Table -->
+                    <!-- Supply Chain Summary -->
+                    <div class="card" style="margin-top: 20px;" id="supply-chain-card">
+                        <div class="card-header">
+                            <span><i class="fas fa-cubes"></i> Software Inventory by System</span>
+                            <span class="status-badge info" id="supply-chain-count">0 systems</span>
+                        </div>
+                        <div style="padding: 8px 16px 0; font-size: 12px; color: var(--text-secondary);">
+                            How many software components each system has and how many known vulnerabilities are linked to them.
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>System</th>
+                                    <th>SBOM Components</th>
+                                    <th>CVEs Linked</th>
+                                    <th>Unmitigated</th>
+                                    <th>Mitigated / Fixed</th>
+                                    <th>Fix Available</th>
+                                </tr>
+                            </thead>
+                            <tbody id="supply-chain-table">
+                                <tr><td colspan="6" class="text-muted" style="text-align: center;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Mitigation Summary -->
+                    <div class="card" style="margin-top: 20px;" id="mitigation-summary-card">
+                        <div class="card-header">
+                            <span><i class="fas fa-shield-alt"></i> Are Your Vulnerabilities Protected?</span>
+                        </div>
+                        <div style="padding: 8px 16px 0; font-size: 12px; color: var(--text-secondary);">
+                            For each vulnerability, this shows whether a security control is actively protecting against it in your environment.
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>System</th>
+                                    <th>CVE</th>
+                                    <th>VEX Status</th>
+                                    <th>Verdict</th>
+                                    <th>Mitigating Control</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mitigation-summary-body">
+                                <tr><td colspan="5" class="text-muted" style="text-align: center;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Failure Details Table -->
                     <div class="card" style="margin-top: 20px;">
                         <div class="card-header">
                             <span><i class="fas fa-list"></i> Failure Details</span>
@@ -1275,7 +1708,7 @@
             <!-- Config Drift Page -->
             <div id="page-drift" class="page">
                 <header class="header">
-                    <h1 class="header-title">Configuration Drift</h1>
+                    <h1 class="header-title">Drift Timeline</h1>
                     <div class="header-actions">
                         <button class="btn btn-secondary" onclick="loadDrift()">
                             <i class="fas fa-sync-alt"></i> Refresh
@@ -1286,14 +1719,18 @@
                     <!-- Legend -->
                     <div class="card" style="margin-bottom: 20px;">
                         <div class="card-header">
-                            <span><i class="fas fa-info-circle"></i> Understanding Drift</span>
+                            <span><i class="fas fa-info-circle"></i> What is Drift?</span>
                         </div>
                         <div style="padding: 16px; font-size: 13px; line-height: 1.6;">
-                            <p style="margin: 0 0 8px 0;"><strong>Configuration drift</strong> occurs when a system that was previously compliant becomes non-compliant. This timeline shows:</p>
+                            <p style="margin: 0 0 8px 0;">
+                                <strong>Drift</strong> happens when a system that was previously following the rules stops following them.
+                                For example, someone might change a configuration that makes a system non-compliant.
+                                This timeline shows when and where that happened.
+                            </p>
                             <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-top: 12px;">
-                                <div><span style="color: #34d399;">●</span> <strong>PASS</strong> - System was compliant</div>
-                                <div><span style="color: #f87171;">●</span> <strong>FAIL</strong> - System drifted to non-compliant</div>
-                                <div><span style="color: #60a5fa;">●</span> <strong>Actor</strong> - User/process that caused the drift</div>
+                                <div><span style="color: #34d399;">&#9679;</span> <strong>Passing</strong> &mdash; System was compliant</div>
+                                <div><span style="color: #f87171;">&#9679;</span> <strong>Failing</strong> &mdash; Something changed, now non-compliant</div>
+                                <div><span style="color: #60a5fa;">&#9679;</span> <strong>Who/What</strong> &mdash; The user or process that triggered the change</div>
                             </div>
                         </div>
                     </div>
@@ -1841,6 +2278,12 @@
                 case 'documents':
                     loadDocuments();
                     break;
+                case 'vulnerabilities':
+                    loadVulnerabilities();
+                    break;
+                case 'posture':
+                    loadSecurityPosture();
+                    break;
             }
         }
         
@@ -1852,9 +2295,12 @@
                 // Load blast radius
                 const blastRes = await apiFetch('/compliance/blast-radius');
                 if (blastRes.ok) {
-                    const blastData = await blastRes.json();
-                    document.getElementById('kpi-failures').textContent = blastData.length;
-                    document.getElementById('nav-failures').textContent = blastData.length;
+                    const blastPayload = await blastRes.json();
+                    const blastData = blastPayload.failures || [];
+                    const scData = blastPayload.supply_chain || [];
+                    const totalCVEs = scData.reduce((s, sc) => s + (sc.vex_items || []).filter(v => v.status === 'affected').length, 0);
+                    document.getElementById('kpi-failures').textContent = blastData.length + (totalCVEs > 0 ? ` + ${totalCVEs} CVEs` : '');
+                    document.getElementById('nav-failures').textContent = blastData.length + totalCVEs;
                     renderBlastTable(blastData);
                 }
                 
@@ -1866,15 +2312,26 @@
                     renderDriftTable(driftData);
                 }
                 
-                // Load threats
-                const threatRes = await apiFetch('/compliance/threats');
-                if (threatRes.ok) {
-                    const threatData = await threatRes.json();
-                    document.getElementById('kpi-threats').textContent = threatData.length;
-                }
-                
-                // Placeholder for docs count
-                document.getElementById('kpi-docs').textContent = '-';
+                // Load VEX summary for CVE KPIs (uses real combined verdicts)
+                try {
+                    const vexRes = await apiFetch('/vex/summary');
+                    if (vexRes.ok) {
+                        const vexData = await vexRes.json();
+                        document.getElementById('kpi-threats').textContent = vexData.mitigated_by_control || 0;
+                        const openCVEs = vexData.affected_unmitigated || 0;
+                        document.getElementById('kpi-open-cves').textContent = openCVEs;
+                        document.getElementById('nav-open-cves').textContent = openCVEs;
+                    }
+                } catch (ve) {}
+
+                // Load security posture for compliance != security KPI
+                try {
+                    const postureRes = await apiFetch('/compliance/security-posture');
+                    if (postureRes.ok) {
+                        const postureData = await postureRes.json();
+                        document.getElementById('kpi-comp-not-sec').textContent = postureData.summary.compliant_but_vulnerable || 0;
+                    }
+                } catch (pe) {}
                 
             } catch (e) {
                 console.error('Failed to load dashboard:', e);
@@ -1893,25 +2350,31 @@
                 return;
             }
             
-            tbody.innerHTML = data.map((row, index) => `
-                <tr onclick="openFindingDrawer(blastRadiusData[${index}])" style="cursor: pointer;">
+            tbody.innerHTML = data.map((row, index) => {
+                const controlShort = (row.control || '').split(':')[0].trim();
+                const controlName = (row.control || '').split(':').slice(1).join(':').trim();
+                const meaning = controlName
+                    ? `The "${controlName}" rule is not being followed on this system, which could leave it exposed.`
+                    : `A required security control is failing on "${escapeHtml(row.system)}".`;
+                return `<tr onclick="openFindingDrawer(blastRadiusData[${index}])" style="cursor: pointer;">
                     <td class="text-muted text-mono" style="font-size: 12px;">${formatDate(row.timestamp)}</td>
                     <td>
                         <div style="font-weight: 600;">${escapeHtml(row.process)}</div>
                         <div class="text-muted" style="font-size: 12px;"><i class="fas fa-server"></i> ${escapeHtml(row.system)}</div>
                     </td>
                     <td>
-                        <span class="status-badge info">${escapeHtml((row.control || '').split(':')[0])}</span>
+                        <span class="status-badge info">${escapeHtml(controlShort)}</span>
+                        ${controlName ? `<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${escapeHtml(controlName)}</div>` : ''}
                     </td>
-                    <td>${renderFrameworkBadges(row.impacted_frameworks)}</td>
-                    <td><code class="text-mono text-danger">${escapeHtml(row.asset)}</code></td>
+                    <td style="font-size: 12px; max-width: 260px; line-height: 1.4; color: var(--text-secondary);">${meaning}</td>
+                    <td><code class="text-mono text-danger" style="font-size: 11px;">${escapeHtml(row.asset)}</code></td>
                     <td>
                         <a href="${escapeHtml(row.link || '#')}" target="_blank" class="btn btn-secondary btn-sm" onclick="event.stopPropagation();">
                             <i class="fas fa-external-link-alt"></i>
                         </a>
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
         }
         
         function renderDriftTable(data) {
@@ -1944,187 +2407,625 @@
         }
         
         // =================================================================
-        // Blast Radius Visualization
+        // Blast Radius – Interactive vis.js Network Graph
         // =================================================================
-        let blastRadiusMermaidInitialized = false;
-        
+        let blastNetwork = null;
+        let blastNodes = null;
+        let blastEdges = null;
+        let blastAllNodes = [];
+        let blastAllEdges = [];
+        let blastCachedFailures = [];
+        let blastCachedSupplyChain = [];
+        let blastCachedProducts = [];
+        let blastCachedProductMap = {};
+        let blastExpandedGroups = new Set();
+
+        function getBlastLayers() {
+            const L = {};
+            document.querySelectorAll('#blast-layer-checkboxes input[type="checkbox"]').forEach(cb => {
+                L[cb.dataset.layer] = cb.checked;
+            });
+            return L;
+        }
+
+        function expandAllSystems() {
+            blastExpandedGroups.clear();
+            const aliasMap = {};
+            blastCachedSupplyChain.forEach(sc => {
+                (sc.rdf_aliases || []).forEach(alias => { aliasMap[alias] = sc.system_name; });
+            });
+
+            const systemsWithContent = new Set();
+            blastCachedFailures.forEach(f => systemsWithContent.add(aliasMap[f.system] || f.system));
+            blastCachedSupplyChain.forEach(sc => {
+                if ((sc.components && sc.components.length > 0) || (sc.vex_items && sc.vex_items.length > 0)) {
+                    systemsWithContent.add(sc.system_name);
+                }
+            });
+
+            systemsWithContent.forEach(name => blastExpandedGroups.add('sys:' + name));
+        }
+
+        function onLayerChange() {
+            expandAllSystems();
+            rebuildBlastGraph();
+        }
+
+        function deriveProductName(raw) {
+            if (!raw) return 'Unknown';
+            if (!raw.startsWith('pkg:')) return raw;
+            let cleaned = raw.replace(/^pkg:[^/]+\//, '');
+            const atIdx = cleaned.indexOf('@');
+            if (atIdx > 0) {
+                const name = cleaned.substring(0, atIdx);
+                const ver = cleaned.substring(atIdx + 1);
+                return `${name} v${ver}`;
+            }
+            return cleaned;
+        }
+
+        function cveColor(status, verdict) {
+            // Prefer combined verdict for coloring when available
+            if (verdict) {
+                switch (verdict) {
+                    case 'mitigated_by_control': return { bg: '#064e3b', border: '#10b981', font: '#a7f3d0' };
+                    case 'not_affected_vendor': return { bg: '#1e3a5f', border: '#60a5fa', font: '#bfdbfe' };
+                    case 'fixed': return { bg: '#064e3b', border: '#10b981', font: '#a7f3d0' };
+                    case 'fix_available': return { bg: '#78350f', border: '#f59e0b', font: '#fef3c7' };
+                    case 'affected_unmitigated': return { bg: '#7f1d1d', border: '#ef4444', font: '#fecaca' };
+                    case 'under_investigation': return { bg: '#78350f', border: '#f59e0b', font: '#fef3c7' };
+                }
+            }
+            switch (status) {
+                case 'not_affected': case 'fixed': return { bg: '#064e3b', border: '#10b981', font: '#a7f3d0' };
+                case 'under_investigation': return { bg: '#78350f', border: '#f59e0b', font: '#fef3c7' };
+                default: return { bg: '#7f1d1d', border: '#ef4444', font: '#fecaca' };
+            }
+        }
+
+        function cveLabel(status, verdict, control) {
+            if (verdict) {
+                switch (verdict) {
+                    case 'mitigated_by_control': return control ? `Mitigated (${control})` : 'Mitigated';
+                    case 'not_affected_vendor': return 'Not Affected';
+                    case 'fixed': return 'Fixed';
+                    case 'fix_available': return 'Fix Available';
+                    case 'affected_unmitigated': return 'Unmitigated';
+                    case 'under_investigation': return 'Investigating';
+                    default: return 'Unknown';
+                }
+            }
+            switch (status) {
+                case 'not_affected': return 'Not Affected';
+                case 'fixed': return 'Fixed';
+                case 'under_investigation': return 'Investigating';
+                case 'affected': return 'Affected';
+                default: return status;
+            }
+        }
+
+        function buildGraphData(failures, supplyChain, layers, products, productMap) {
+            const nodes = [];
+            const edges = [];
+            const L = layers;
+            const addedNodes = new Set();
+            const addedEdges = new Set();
+
+            function addNode(n) { if (!addedNodes.has(n.id)) { addedNodes.add(n.id); nodes.push(n); } }
+            function addEdge(from, to, opts) {
+                const key = `${from}->${to}`;
+                if (!addedEdges.has(key)) { addedEdges.add(key); edges.push({ from, to, ...opts }); }
+            }
+
+            // Build alias map: RDF system name -> canonical supply chain name
+            const aliasMap = {};
+            supplyChain.forEach(sc => {
+                (sc.rdf_aliases || []).forEach(alias => { aliasMap[alias] = sc.system_name; });
+            });
+            function canonicalName(rdfName) { return aliasMap[rdfName] || rdfName; }
+
+            // Build system_id -> system_name lookup for product edges
+            const sysIdToName = {};
+            supplyChain.forEach(sc => { sysIdToName[sc.system_id] = sc.system_name; });
+
+            // Deduplicate failures by canonical system name
+            const failuresBySystem = new Map();
+            failures.forEach(f => {
+                const cn = canonicalName(f.system);
+                if (!failuresBySystem.has(cn)) failuresBySystem.set(cn, []);
+                failuresBySystem.get(cn).push(f);
+            });
+
+            // Deduplicate processes and frameworks
+            const processesBySystem = new Map();
+            const allFrameworks = new Map();
+            failures.forEach(f => {
+                const cn = canonicalName(f.system);
+                if (!processesBySystem.has(cn)) processesBySystem.set(cn, new Set());
+                processesBySystem.get(cn).add(f.process);
+                if (f.impacted_frameworks && f.impacted_frameworks !== 'None') {
+                    f.impacted_frameworks.split(',').forEach(fw => {
+                        const t = fw.trim();
+                        if (t) allFrameworks.set(t, f.process);
+                    });
+                }
+            });
+
+            // --- SYSTEMS (always shown if any layer needs them) ---
+            const systemNames = new Set();
+            if (L.compliance) failuresBySystem.forEach((_, name) => systemNames.add(name));
+            if (L.sbom || L.vex) supplyChain.forEach(sc => systemNames.add(sc.system_name));
+
+            systemNames.forEach(name => {
+                const sysFailures = failuresBySystem.get(name) || [];
+                const sc = supplyChain.find(s => s.system_name === name);
+                const compCount = sc ? (sc.components || []).length : 0;
+                const cveCount = sc ? (sc.vex_items || []).length : 0;
+                const failCount = sysFailures.length;
+
+                const parts = [];
+                if (L.compliance && failCount > 0) parts.push(`⚠ ${failCount} failure${failCount > 1 ? 's' : ''}`);
+                if (L.sbom && compCount > 0) parts.push(`${compCount} component${compCount > 1 ? 's' : ''}`);
+                if (L.vex && cveCount > 0) parts.push(`${cveCount} CVE${cveCount > 1 ? 's' : ''}`);
+                const subtitle = parts.length ? `\n${parts.join('  ·  ')}` : '';
+                const isExpanded = blastExpandedGroups.has('sys:' + name);
+                const hasFails = L.compliance && failCount > 0;
+                const affectedCVEs = sc ? (sc.vex_items || []).filter(v => v.status === 'affected').length : 0;
+                const hasActiveCVEs = L.vex && affectedCVEs > 0;
+
+                const sysColor = hasFails
+                    ? { background: '#4a1c1c', border: '#f87171', highlight: { background: '#5a2525', border: '#fca5a5' } }
+                    : hasActiveCVEs
+                        ? { background: '#3d2008', border: '#f59e0b', highlight: { background: '#4a2a0e', border: '#fbbf24' } }
+                        : { background: '#1e3a5f', border: '#60a5fa', highlight: { background: '#2a4a6f', border: '#93c5fd' } };
+                const sysFontColor = hasFails ? '#fecaca' : hasActiveCVEs ? '#fef3c7' : '#bfdbfe';
+                const sysBorderWidth = hasFails ? 3 : 2;
+
+                addNode({
+                    id: 'sys:' + name,
+                    label: name + subtitle,
+                    shape: 'box',
+                    color: sysColor,
+                    font: { color: sysFontColor, size: 14, face: 'Outfit', multi: 'md', bold: { color: '#e2e8f0', size: 15 } },
+                    borderWidth: sysBorderWidth,
+                    shapeProperties: { borderRadius: hasFails ? 2 : 6 },
+                    margin: 12,
+                    level: 1,
+                    nodeType: 'system',
+                    _expandable: (L.compliance && failCount > 0) || (L.sbom && compCount > 0),
+                    title: `System: ${name}${failCount ? `\n⚠ ${failCount} compliance failures` : ''}${compCount ? `\n${compCount} SBOM components` : ''}${cveCount ? `\n${cveCount} linked CVEs` : ''}${affectedCVEs ? `\n🔴 ${affectedCVEs} active vulnerabilities` : ''}\n\nClick to ${isExpanded ? 'collapse' : 'expand'}`
+                });
+
+                // Track violation IDs and their controls for gap detection later
+                const violationNodes = [];
+
+                // --- COMPLIANCE LAYER: violations inside system ---
+                if (L.compliance && isExpanded) {
+                    // Dedup violations by control+asset
+                    const seenViols = new Set();
+                    sysFailures.forEach((f, i) => {
+                        const dedupKey = `${f.control}::${f.asset}`;
+                        if (seenViols.has(dedupKey)) return;
+                        seenViols.add(dedupKey);
+
+                        const vid = `viol:${name}:${i}`;
+                        const shortControl = (f.control || '').split(':')[0].trim();
+                        const shortAsset = f.asset.length > 20 ? f.asset.substring(0, 20) + '..' : f.asset;
+                        addNode({
+                            id: vid,
+                            label: `${shortControl}\n${shortAsset}`,
+                            shape: 'triangle',
+                            size: 20,
+                            color: { background: '#7f1d1d', border: '#f87171' },
+                            font: { color: '#fecaca', size: 10, face: 'Outfit', multi: 'md' },
+                            level: 2,
+                            nodeType: 'violation',
+                            _control: f.control,
+                            title: `VIOLATION\nControl: ${f.control}\nAsset: ${f.asset}\nProcess: ${f.process}\nTimestamp: ${f.timestamp}`
+                        });
+                        addEdge('sys:' + name, vid, { color: { color: '#f87171', opacity: 0.6 }, dashes: false });
+                        violationNodes.push({ id: vid, control: f.control });
+                    });
+                }
+
+                // Track CVE nodes for gap detection
+                const cveNodes = [];
+
+                // --- SBOM LAYER: components from this system ---
+                if (L.sbom && sc && isExpanded) {
+                    (sc.components || []).forEach(comp => {
+                        const cid = `comp:${sc.system_id}:${comp.name}`;
+                        addNode({
+                            id: cid,
+                            label: `${comp.name}\nv${comp.version}`,
+                            shape: 'box',
+                            color: { background: '#78350f', border: '#fbbf24', highlight: { background: '#92400e', border: '#fcd34d' } },
+                            font: { color: '#fef3c7', size: 11, face: 'Outfit', multi: 'md' },
+                            borderWidth: 1,
+                            margin: 8,
+                            level: 2,
+                            nodeType: 'component',
+                            title: `Component: ${comp.name} ${comp.version}\nType: ${comp.type}${comp.purl ? '\nPURL: ' + comp.purl : ''}${comp.cpe ? '\nCPE: ' + comp.cpe : ''}`
+                        });
+                        addEdge('sys:' + name, cid, { color: { color: '#fbbf24', opacity: 0.4 }, dashes: false });
+
+                        // Link matching CVEs below this component
+                        if (L.vex) {
+                            (sc.vex_items || []).forEach(vex => {
+                                const matched = (vex.purl && comp.purl && vex.purl === comp.purl) ||
+                                                (vex.cpe && comp.cpe && vex.cpe === comp.cpe);
+                                if (matched) {
+                                    const cvid = `cve:${vex.vulnerability_id}`;
+                                    const c = cveColor(vex.status, vex.combined_verdict);
+                                    const lbl = cveLabel(vex.status, vex.combined_verdict, vex.mitigating_control);
+                                    addNode({
+                                        id: cvid,
+                                        label: `${vex.vulnerability_id}\n${lbl}`,
+                                        shape: 'dot',
+                                        size: 20,
+                                        color: { background: c.bg, border: c.border, highlight: { background: c.bg, border: c.border } },
+                                        font: { color: c.font, size: 11, face: 'Outfit', multi: 'md' },
+                                        borderWidth: 3,
+                                        level: 3,
+                                        nodeType: 'cve',
+                                        title: `${vex.vulnerability_id}\nVerdict: ${lbl}${vex.justification ? '\nJustification: ' + vex.justification : ''}${vex.mitigating_control ? '\nControl: ' + vex.mitigating_control : ''}${vex.action_statement ? '\nAction: ' + vex.action_statement : ''}\nProduct: ${deriveProductName(vex.product_name)}`
+                                    });
+                                    addEdge(cid, cvid, { color: { color: c.border, opacity: 0.7 }, width: 2 });
+                                    if (vex.mitigating_control) {
+                                        cveNodes.push({ id: cvid, control: vex.mitigating_control, cveId: vex.vulnerability_id, verdict: vex.combined_verdict });
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+
+                // --- VEX LAYER: unmatched CVEs linked directly to system ---
+                if (L.vex && sc) {
+                    const matchedCVEs = new Set();
+                    if (L.sbom && isExpanded) {
+                        (sc.vex_items || []).forEach(vex => {
+                            (sc.components || []).forEach(comp => {
+                                if ((vex.purl && comp.purl && vex.purl === comp.purl) ||
+                                    (vex.cpe && comp.cpe && vex.cpe === comp.cpe)) {
+                                    matchedCVEs.add(vex.vulnerability_id);
+                                }
+                            });
+                        });
+                    }
+                    (sc.vex_items || []).forEach(vex => {
+                        if (L.sbom && isExpanded && matchedCVEs.has(vex.vulnerability_id)) return;
+                        const cvid = `cve:${vex.vulnerability_id}`;
+                        const c = cveColor(vex.status, vex.combined_verdict);
+                        const lbl = cveLabel(vex.status, vex.combined_verdict, vex.mitigating_control);
+                        addNode({
+                            id: cvid,
+                            label: `${vex.vulnerability_id}\n${lbl}`,
+                            shape: 'dot',
+                            size: 20,
+                            color: { background: c.bg, border: c.border, highlight: { background: c.bg, border: c.border } },
+                            font: { color: c.font, size: 11, face: 'Outfit', multi: 'md' },
+                            borderWidth: 3,
+                            level: 2,
+                            nodeType: 'cve',
+                            title: `${vex.vulnerability_id}\nVerdict: ${lbl}${vex.justification ? '\nJustification: ' + vex.justification : ''}${vex.mitigating_control ? '\nControl: ' + vex.mitigating_control : ''}${vex.action_statement ? '\nAction: ' + vex.action_statement : ''}`
+                        });
+                        addEdge('sys:' + name, cvid, { color: { color: c.border, opacity: 0.5 }, dashes: true, width: 2 });
+                        if (vex.mitigating_control) {
+                            cveNodes.push({ id: cvid, control: vex.mitigating_control, cveId: vex.vulnerability_id, verdict: vex.combined_verdict });
+                        }
+                    });
+                }
+
+                // --- CRITICAL GAP DETECTION ---
+                // Connect CVEs to violations when they share a mitigating control
+                if (isExpanded && L.compliance && L.vex) {
+                    cveNodes.forEach(cve => {
+                        violationNodes.forEach(viol => {
+                            // Match if the violation's control contains the CVE's mitigating control or vice versa
+                            const cveCtrl = (cve.control || '').toLowerCase();
+                            const violCtrl = (viol.control || '').toLowerCase();
+                            if (!cveCtrl || !violCtrl) return;
+                            // Extract control ID prefix (e.g. "NIST CM-7" from "NIST CM-7: Least Functionality")
+                            const cveCtrlId = cveCtrl.split(':')[0].trim();
+                            const violCtrlId = violCtrl.split(':')[0].trim();
+                            if (cveCtrlId !== violCtrlId) return;
+
+                            const shortCtrl = (cve.control || '').split(':')[0].trim();
+                            const gapId = `gap:${name}:${cve.cveId}:${shortCtrl}`;
+
+                            addNode({
+                                id: gapId,
+                                label: `CRITICAL GAP\n${shortCtrl} is FAILING\nbut should mitigate\n${cve.cveId}`,
+                                shape: 'box',
+                                color: { background: '#92400e', border: '#f59e0b', highlight: { background: '#a3510f', border: '#fbbf24' } },
+                                font: { color: '#fef3c7', size: 10, face: 'Outfit', multi: 'md', bold: { color: '#fde68a', size: 11 } },
+                                borderWidth: 2,
+                                shapeProperties: { borderRadius: 4 },
+                                margin: 8,
+                                level: 3,
+                                nodeType: 'gap',
+                                title: `CRITICAL GAP\n\nControl "${cve.control}" is FAILING on this system\nbut it is supposed to mitigate ${cve.cveId}.\n\nThis is the highest priority fix.`
+                            });
+                            addEdge(cve.id, gapId, {
+                                color: { color: '#f59e0b', opacity: 0.9 },
+                                width: 3,
+                                dashes: [8, 4],
+                                label: 'mitigated by',
+                                font: { color: '#fbbf24', size: 9, face: 'Outfit', strokeWidth: 0, align: 'middle' }
+                            });
+                            addEdge(gapId, viol.id, {
+                                color: { color: '#ef4444', opacity: 0.9 },
+                                width: 3,
+                                dashes: [8, 4],
+                                label: 'but FAILING',
+                                font: { color: '#f87171', size: 9, face: 'Outfit', strokeWidth: 0, align: 'middle' }
+                            });
+                        });
+                    });
+                }
+            });
+
+            // --- IMPACT LAYER: processes + frameworks ---
+            if (L.impact) {
+                processesBySystem.forEach((procs, sysName) => {
+                    procs.forEach(proc => {
+                        const pid = 'proc:' + proc;
+                        addNode({
+                            id: pid,
+                            label: proc,
+                            shape: 'diamond',
+                            size: 22,
+                            color: { background: '#3b1f5e', border: '#a78bfa', highlight: { background: '#4c2882', border: '#c4b5fd' } },
+                            font: { color: '#ddd6fe', size: 12, face: 'Outfit' },
+                            level: 2,
+                            nodeType: 'process',
+                            title: `Business Process: ${proc}`
+                        });
+                        addEdge('sys:' + sysName, pid, { color: { color: '#a78bfa', opacity: 0.4 } });
+                    });
+                });
+                allFrameworks.forEach((proc, fw) => {
+                    const fid = 'fw:' + fw;
+                    const shortFw = fw.length > 20 ? fw.substring(0, 20) + '..' : fw;
+                    addNode({
+                        id: fid,
+                        label: shortFw,
+                        shape: 'hexagon',
+                        size: 18,
+                        color: { background: '#064e3b', border: '#34d399', highlight: { background: '#065f46', border: '#6ee7b7' } },
+                        font: { color: '#a7f3d0', size: 10, face: 'Outfit' },
+                        level: 4,
+                        nodeType: 'framework',
+                        title: `Framework: ${fw}`
+                    });
+                    addEdge('proc:' + proc, fid, { color: { color: '#34d399', opacity: 0.3 } });
+                });
+            }
+
+            // --- PRODUCT LAYER: product nodes above systems ---
+            if (L.sbom && products && products.length > 0) {
+                products.forEach(prod => {
+                    const sysIds = (productMap || {})[prod.product_id] || [];
+                    const linkedNames = sysIds.map(id => sysIdToName[id]).filter(Boolean);
+                    const visibleLinked = linkedNames.filter(n => systemNames.has(n));
+                    if (visibleLinked.length === 0) return;
+
+                    const prodId = 'prod:' + prod.product_id;
+                    addNode({
+                        id: prodId,
+                        label: prod.display_name,
+                        shape: 'box',
+                        color: { background: '#1a1a2e', border: '#818cf8', highlight: { background: '#252547', border: '#a5b4fc' } },
+                        font: { color: '#c7d2fe', size: 15, face: 'Outfit', bold: { color: '#e0e7ff', size: 16 } },
+                        borderWidth: 2,
+                        shapeProperties: { borderRadius: 10 },
+                        margin: 14,
+                        level: 0,
+                        nodeType: 'product',
+                        title: `Product: ${prod.display_name}\nSystems: ${visibleLinked.join(', ')}`
+                    });
+
+                    visibleLinked.forEach(sysName => {
+                        addEdge(prodId, 'sys:' + sysName, {
+                            color: { color: '#818cf8', opacity: 0.5 },
+                            width: 2,
+                            dashes: false
+                        });
+                    });
+                });
+            }
+
+            return { nodes, edges };
+        }
+
+        function rebuildBlastGraph() {
+            const container = document.getElementById('blast-graph-container');
+            const layers = getBlastLayers();
+            const { nodes, edges } = buildGraphData(blastCachedFailures, blastCachedSupplyChain, layers, blastCachedProducts, blastCachedProductMap);
+
+            if (nodes.length === 0) {
+                if (blastNetwork) { blastNetwork.destroy(); blastNetwork = null; }
+                container.innerHTML = '<p style="text-align:center;padding:60px 20px;color:var(--text-secondary);">Select at least one layer above, or no data available for the selected layers.</p>';
+                return;
+            }
+
+            blastNodes = new vis.DataSet(nodes);
+            blastEdges = new vis.DataSet(edges);
+
+            if (blastNetwork) blastNetwork.destroy();
+
+            blastNetwork = new vis.Network(container, { nodes: blastNodes, edges: blastEdges }, {
+                physics: {
+                    enabled: true,
+                    solver: 'hierarchicalRepulsion',
+                    hierarchicalRepulsion: { nodeDistance: 160, centralGravity: 0.2, springLength: 120, springConstant: 0.05 },
+                    stabilization: { iterations: 150, fit: true }
+                },
+                interaction: {
+                    hover: true,
+                    tooltipDelay: 150,
+                    zoomView: true,
+                    dragView: true,
+                    dragNodes: true,
+                    navigationButtons: false,
+                    keyboard: { enabled: true }
+                },
+                edges: {
+                    smooth: { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.4 },
+                    arrows: { to: { enabled: true, scaleFactor: 0.5 } },
+                    width: 1.5
+                },
+                layout: {
+                    hierarchical: {
+                        enabled: true,
+                        direction: 'UD',
+                        sortMethod: 'directed',
+                        levelSeparation: 120,
+                        nodeSpacing: 160,
+                        treeSpacing: 200,
+                        blockShifting: true,
+                        edgeMinimization: true,
+                        parentCentralization: true
+                    }
+                }
+            });
+            // Freeze physics after layout stabilizes so nodes stay put
+            blastNetwork.on('stabilized', function() {
+                blastNetwork.setOptions({ physics: { enabled: false } });
+            });
+
+            blastNetwork.on('click', function(params) {
+                if (params.nodes.length === 1) {
+                    const nodeId = params.nodes[0];
+                    const node = blastNodes.get(nodeId);
+                    if (node && node.nodeType === 'system' && node._expandable) {
+                        if (blastExpandedGroups.has(nodeId)) {
+                            blastExpandedGroups.delete(nodeId);
+                        } else {
+                            blastExpandedGroups.add(nodeId);
+                        }
+                        rebuildBlastGraph();
+                    }
+                }
+            });
+
+            blastNetwork.once('stabilizationIterationsDone', function() {
+                blastNetwork.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } });
+            });
+        }
+
         async function loadBlastRadius() {
-            const container = document.getElementById('blast-diagram-container');
+            const container = document.getElementById('blast-graph-container');
             const tbody = document.getElementById('blast-details-table');
             const countBadge = document.getElementById('blast-event-count');
-            
-            container.innerHTML = '<div class="loading"><span></span><span></span><span></span></div>';
+            const scTbody = document.getElementById('supply-chain-table');
+
+            container.innerHTML = '<div class="loading" style="padding:80px 0;display:flex;justify-content:center;"><span></span><span></span><span></span></div>';
             tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align: center;">Loading...</td></tr>';
-            
+            scTbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align: center;">Loading...</td></tr>';
+
             try {
                 const res = await apiFetch('/compliance/blast-radius');
                 if (!res.ok) {
-                    container.innerHTML = '<p class="text-muted" style="text-align: center; padding: 40px;">Failed to load blast radius data</p>';
+                    container.innerHTML = '<p style="text-align:center;padding:60px;color:var(--text-secondary);">Failed to load blast radius data</p>';
                     return;
                 }
-                
-                const data = await res.json();
-                countBadge.textContent = `${data.length} events`;
-                
-                if (data.length === 0) {
-                    container.innerHTML = '<p class="text-muted" style="text-align: center; padding: 40px;"><i class="fas fa-check-circle" style="color: var(--success); margin-right: 8px;"></i>No compliance failures detected</p>';
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align: center;">All systems compliant</td></tr>';
+
+                const payload = await res.json();
+                blastCachedFailures = payload.failures || [];
+                blastCachedSupplyChain = payload.supply_chain || [];
+                blastCachedProducts = payload.products || [];
+                blastCachedProductMap = payload.product_map || {};
+                expandAllSystems();
+
+                const totalEvents = blastCachedFailures.length;
+                const totalCVEs = blastCachedSupplyChain.reduce((s, sc) => s + (sc.vex_items || []).length, 0);
+                countBadge.textContent = `${totalEvents} failure${totalEvents !== 1 ? 's' : ''}, ${totalCVEs} CVE${totalCVEs !== 1 ? 's' : ''}`;
+
+                if (totalEvents === 0 && blastCachedSupplyChain.length === 0) {
+                    container.innerHTML = '<p style="text-align:center;padding:60px;color:var(--text-secondary);"><i class="fas fa-check-circle" style="color:var(--success);margin-right:8px;"></i>No compliance failures or supply chain exposure detected</p>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align: center;">All clear</td></tr>';
+                    scTbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align: center;">No SBOM data</td></tr>';
                     return;
                 }
-                
-                // Generate Mermaid diagram
-                const mermaidCode = generateBlastMermaid(data);
-                renderMermaidDiagram(container, mermaidCode);
-                
-                // Render details table
-                renderBlastDetailsTable(data);
-                
+
+                rebuildBlastGraph();
+                renderBlastDetailsTable(blastCachedFailures);
+                renderSupplyChainTable(blastCachedSupplyChain);
+
             } catch (e) {
                 console.error('Failed to load blast radius:', e);
-                container.innerHTML = '<p class="text-muted" style="text-align: center; padding: 40px;">Error loading data</p>';
+                container.innerHTML = '<p style="text-align:center;padding:60px;color:var(--text-secondary);">Error loading data</p>';
             }
         }
-        
-        function generateBlastMermaid(data) {
-            // Group by unique combinations to reduce diagram complexity
-            const systems = new Map();
-            const processes = new Map();
-            const frameworks = new Set();
-            const events = [];
-            
-            data.slice(0, 10).forEach((item, idx) => {
-                const eventId = `event_${idx}`;
-                const systemId = `sys_${item.system.replace(/[^a-zA-Z0-9]/g, '_')}`;
-                const processId = `proc_${item.process.replace(/[^a-zA-Z0-9]/g, '_')}`;
-                
-                events.push({
-                    id: eventId,
-                    label: item.asset.length > 20 ? item.asset.substring(0, 20) + '...' : item.asset,
-                    systemId: systemId
+
+        function renderSupplyChainTable(supplyChain) {
+            const tbody = document.getElementById('supply-chain-table');
+            const countBadge = document.getElementById('supply-chain-count');
+            countBadge.textContent = `${supplyChain.length} system${supplyChain.length !== 1 ? 's' : ''}`;
+
+            if (!supplyChain || supplyChain.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align: center;">No SBOM data ingested yet</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = supplyChain.map(sc => {
+                const comps = sc.components || [];
+                const vexItems = sc.vex_items || [];
+                const unmitigated = vexItems.filter(v => v.combined_verdict === 'affected_unmitigated').length;
+                const mitigated = vexItems.filter(v => ['mitigated_by_control','not_affected_vendor','fixed'].includes(v.combined_verdict)).length;
+                const fixAvail = vexItems.filter(v => v.combined_verdict === 'fix_available').length;
+                return `<tr>
+                    <td style="font-weight: 600;">${escapeHtml(sc.system_name)}</td>
+                    <td>${comps.length}</td>
+                    <td>${vexItems.length}</td>
+                    <td>${unmitigated > 0 ? `<span class="status-badge fail">${unmitigated}</span>` : '<span class="text-muted">0</span>'}</td>
+                    <td>${mitigated > 0 ? `<span class="status-badge pass">${mitigated}</span>` : '<span class="text-muted">0</span>'}</td>
+                    <td>${fixAvail > 0 ? `<span class="status-badge warning">${fixAvail}</span>` : '<span class="text-muted">0</span>'}</td>
+                </tr>`;
+            }).join('');
+
+            // Render mitigation summary
+            renderMitigationSummary(supplyChain);
+        }
+
+        function renderMitigationSummary(supplyChain) {
+            const tbody = document.getElementById('mitigation-summary-body');
+            const rows = [];
+            (supplyChain || []).forEach(sc => {
+                (sc.vex_items || []).forEach(vex => {
+                    rows.push({
+                        system: sc.system_name,
+                        cve: vex.vulnerability_id,
+                        status: vex.status,
+                        verdict: vex.combined_verdict || 'unknown',
+                        control: vex.mitigating_control || ''
+                    });
                 });
-                
-                systems.set(systemId, item.system);
-                processes.set(processId, { name: item.process, systemId: systemId });
-                
-                // Parse frameworks
-                if (item.impacted_frameworks && item.impacted_frameworks !== 'None') {
-                    item.impacted_frameworks.split(',').forEach(fw => {
-                        const trimmed = fw.trim();
-                        if (trimmed) {
-                            frameworks.add({ id: `fw_${trimmed.replace(/[^a-zA-Z0-9]/g, '_')}`, name: trimmed, processId: processId });
-                        }
-                    });
-                }
             });
-            
-            // Build Mermaid flowchart
-            let mermaid = 'flowchart LR\n';
-            mermaid += '    %% Styling\n';
-            mermaid += '    classDef event fill:#7f1d1d,stroke:#f87171,color:#fecaca\n';
-            mermaid += '    classDef system fill:#1e3a5f,stroke:#60a5fa,color:#bfdbfe\n';
-            mermaid += '    classDef process fill:#3b1f5e,stroke:#a78bfa,color:#ddd6fe\n';
-            mermaid += '    classDef framework fill:#064e3b,stroke:#34d399,color:#a7f3d0\n\n';
-            
-            // Add event nodes
-            events.forEach(e => {
-                mermaid += `    ${e.id}["🚨 ${e.label}"]\n`;
-            });
-            
-            // Add system nodes
-            systems.forEach((name, id) => {
-                mermaid += `    ${id}["🖥️ ${name}"]\n`;
-            });
-            
-            // Add process nodes
-            processes.forEach((proc, id) => {
-                mermaid += `    ${id}["⚙️ ${proc.name}"]\n`;
-            });
-            
-            // Add framework nodes (deduplicated)
-            const uniqueFrameworks = new Map();
-            frameworks.forEach(fw => {
-                if (!uniqueFrameworks.has(fw.id)) {
-                    uniqueFrameworks.set(fw.id, fw);
-                }
-            });
-            uniqueFrameworks.forEach((fw, id) => {
-                const shortName = fw.name.length > 15 ? fw.name.substring(0, 15) + '...' : fw.name;
-                mermaid += `    ${id}["📋 ${shortName}"]\n`;
-            });
-            
-            mermaid += '\n';
-            
-            // Add edges: Event -> System
-            events.forEach(e => {
-                mermaid += `    ${e.id} --> ${e.systemId}\n`;
-            });
-            
-            // Add edges: System -> Process
-            processes.forEach((proc, id) => {
-                mermaid += `    ${proc.systemId} --> ${id}\n`;
-            });
-            
-            // Add edges: Process -> Framework
-            frameworks.forEach(fw => {
-                mermaid += `    ${fw.processId} --> ${fw.id}\n`;
-            });
-            
-            mermaid += '\n';
-            
-            // Apply classes
-            events.forEach(e => { mermaid += `    class ${e.id} event\n`; });
-            systems.forEach((_, id) => { mermaid += `    class ${id} system\n`; });
-            processes.forEach((_, id) => { mermaid += `    class ${id} process\n`; });
-            uniqueFrameworks.forEach((_, id) => { mermaid += `    class ${id} framework\n`; });
-            
-            return mermaid;
-        }
-        
-        async function renderMermaidDiagram(container, code) {
-            try {
-                // Initialize Mermaid if needed
-                if (!blastRadiusMermaidInitialized) {
-                    mermaid.initialize({
-                        startOnLoad: false,
-                        theme: 'dark',
-                        themeVariables: {
-                            darkMode: true,
-                            background: '#0a0e14',
-                            primaryColor: '#1e3a5f',
-                            primaryTextColor: '#e2e8f0',
-                            primaryBorderColor: '#60a5fa',
-                            lineColor: '#475569',
-                            secondaryColor: '#3b1f5e',
-                            tertiaryColor: '#064e3b'
-                        },
-                        flowchart: {
-                            curve: 'basis',
-                            padding: 20
-                        }
-                    });
-                    blastRadiusMermaidInitialized = true;
-                }
-                
-                // Render the diagram
-                const { svg } = await mermaid.render('blast-mermaid-' + Date.now(), code);
-                container.innerHTML = svg;
-                
-                // Style the SVG
-                const svgEl = container.querySelector('svg');
-                if (svgEl) {
-                    svgEl.style.maxWidth = '100%';
-                    svgEl.style.height = 'auto';
-                    svgEl.style.minHeight = '300px';
-                }
-            } catch (e) {
-                console.error('Mermaid render error:', e);
-                container.innerHTML = `<pre style="color: var(--text-muted); padding: 20px; overflow: auto; font-size: 12px;">${escapeHtml(code)}</pre>`;
+            if (rows.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-muted" style="text-align:center;padding:20px;">No CVE data linked to systems</td></tr>';
+                return;
             }
+            tbody.innerHTML = rows.map(r => {
+                const statusClass = r.status === 'affected' ? 'fail' : r.status === 'not_affected' ? 'pass' : r.status === 'fixed' ? 'info' : 'warn';
+                return `<tr>
+                    <td style="font-weight:600;">${escapeHtml(r.system)}</td>
+                    <td class="text-mono" style="font-weight:600;">${escapeHtml(r.cve)}</td>
+                    <td><span class="status-badge ${statusClass}">${escapeHtml(r.status.replace(/_/g, ' '))}</span></td>
+                    <td>${verdictBadge(r.verdict, r.control)}</td>
+                    <td>${r.control ? escapeHtml(r.control) : '<span class="text-muted">none</span>'}</td>
+                </tr>`;
+            }).join('');
         }
-        
+
         function renderBlastDetailsTable(data) {
             const tbody = document.getElementById('blast-details-table');
-            
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align: center;">No compliance failures</td></tr>';
+                return;
+            }
             tbody.innerHTML = data.map(row => `
                 <tr>
                     <td class="text-muted text-mono" style="font-size: 12px;">${formatDate(row.timestamp)}</td>
@@ -2379,18 +3280,35 @@
         // =================================================================
         async function loadSystems() {
             const tbody = document.getElementById('systems-table-body');
-            tbody.innerHTML = renderLoadingRow(7);
+            tbody.innerHTML = renderLoadingRow(9);
             try {
                 const res = await apiFetch('/systems');
                 if (res.ok) {
                     const data = await res.json();
-                    renderSystemsTable(data.items || []);
+                    const systems = data.items || [];
+                    // Enrich with SBOM and VEX data
+                    for (const s of systems) {
+                        s._sbom = null;
+                        s._cveCount = 0;
+                        try {
+                            const sbomRes = await apiFetch(`/sbom/${s.id}`);
+                            if (sbomRes.ok) s._sbom = await sbomRes.json();
+                        } catch(e) {}
+                        try {
+                            const vexRes = await apiFetch(`/vex/statements?system_id=${s.id}&per_page=1`);
+                            if (vexRes.ok) {
+                                const vd = await vexRes.json();
+                                s._cveCount = vd.total || 0;
+                            }
+                        } catch(e) {}
+                    }
+                    renderSystemsTable(systems);
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-muted" style="text-align: center; padding: 40px;">Failed to load systems</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-muted" style="text-align: center; padding: 40px;">Failed to load systems</td></tr>';
                 }
             } catch (e) {
                 console.error('Failed to load systems:', e);
-                tbody.innerHTML = '<tr><td colspan="7" class="text-muted" style="text-align: center; padding: 40px;">Error loading systems</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="text-muted" style="text-align: center; padding: 40px;">Error loading systems</td></tr>';
             }
         }
         
@@ -2398,11 +3316,14 @@
             const tbody = document.getElementById('systems-table-body');
             
             if (systems.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-muted" style="text-align: center; padding: 40px;">No systems registered yet</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="text-muted" style="text-align: center; padding: 40px;">No systems registered yet</td></tr>';
                 return;
             }
             
-            tbody.innerHTML = systems.map(s => `
+            tbody.innerHTML = systems.map(s => {
+                const sbomLabel = s._sbom ? `${s._sbom.total_components} components` : '<span class="text-muted">No SBOM</span>';
+                const cveLabel = s._cveCount > 0 ? `<span class="status-badge fail">${s._cveCount}</span>` : '<span class="text-muted">0</span>';
+                return `
                 <tr>
                     <td class="text-mono">${escapeHtml(s.system_id)}</td>
                     <td style="font-weight: 600;">${escapeHtml(s.display_name)}</td>
@@ -2417,12 +3338,14 @@
                             ${escapeHtml(s.criticality)}
                         </span>
                     </td>
+                    <td>${sbomLabel}</td>
+                    <td>${cveLabel}</td>
                     <td>${escapeHtml(s.owner_user || s.owner_team || '-')}</td>
                     <td>
                         <button class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i></button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
         
         // =================================================================
@@ -2529,6 +3452,240 @@
             `).join('');
         }
         
+        // =================================================================
+        // Vulnerabilities (VEX + SBOM)
+        // =================================================================
+        async function loadVulnerabilities() {
+            await Promise.all([loadVEXSummary(), loadVEXStatements(), loadVEXDocuments(), loadSBOMSystemPicker()]);
+        }
+
+        async function loadSecurityPosture() {
+            try {
+                const res = await apiFetch('/compliance/security-posture');
+                if (!res.ok) return;
+                const data = await res.json();
+
+                // Quadrant cards
+                document.getElementById('posture-secure-compliant').textContent = data.summary.secure_compliant;
+                document.getElementById('posture-compliant-vulnerable').textContent = data.summary.compliant_but_vulnerable;
+                document.getElementById('posture-noncompliant-cve').textContent = data.summary.non_compliant_cve_related;
+                document.getElementById('posture-noncompliant-nocve').textContent = data.summary.non_compliant_no_cve;
+
+                // Critical gaps table
+                const gapBody = document.getElementById('posture-critical-gaps-body');
+                const allGaps = [];
+                data.systems.forEach(sys => {
+                    sys.critical_gaps.forEach(g => {
+                        allGaps.push({ system: sys.system_name, ...g });
+                    });
+                });
+                if (allGaps.length === 0) {
+                    gapBody.innerHTML = '<tr><td colspan="5" class="text-muted" style="text-align:center;padding:20px;"><i class="fas fa-check-circle" style="color:var(--success);margin-right:6px;"></i>No critical gaps found</td></tr>';
+                } else {
+                    gapBody.innerHTML = allGaps.map(g => `<tr>
+                        <td style="font-weight:600;">${escapeHtml(g.system)}</td>
+                        <td class="text-mono" style="font-weight:600;">${escapeHtml(g.cve)}</td>
+                        <td>${escapeHtml(g.control)}</td>
+                        <td><span class="status-badge fail">${escapeHtml(g.control_status)}</span></td>
+                        <td style="font-size:12px;">${escapeHtml(g.note)}</td>
+                    </tr>`).join('');
+                }
+
+                // Per-system posture table
+                const sysBody = document.getElementById('posture-systems-body');
+                const postureLabels = {
+                    'secure_compliant': { cls: 'pass', label: 'Secure & Compliant' },
+                    'compliant_but_vulnerable': { cls: 'warn', label: 'Compliant but Vulnerable' },
+                    'non_compliant_cve_related': { cls: 'fail', label: 'Non-compliant (CVE)' },
+                    'non_compliant_no_cve': { cls: 'neutral', label: 'Non-compliant' },
+                };
+                sysBody.innerHTML = data.systems.map(sys => {
+                    const p = postureLabels[sys.posture] || { cls: 'neutral', label: sys.posture };
+                    const compPct = (sys.compliance_status.pass + sys.compliance_status.fail) > 0
+                        ? Math.round(sys.compliance_status.pass / (sys.compliance_status.pass + sys.compliance_status.fail) * 100)
+                        : 100;
+                    const compClass = compPct === 100 ? 'pass' : compPct >= 80 ? 'warn' : 'fail';
+                    return `<tr>
+                        <td style="font-weight:600;">${escapeHtml(sys.system_name)}</td>
+                        <td style="font-size:12px;">${escapeHtml(sys.product || '-')}</td>
+                        <td><span class="status-badge ${compClass}">${compPct}%</span> <span style="font-size:11px;color:var(--text-secondary);">(${sys.compliance_status.pass}P/${sys.compliance_status.fail}F)</span></td>
+                        <td>${sys.security_status.total_cves}</td>
+                        <td style="color:var(--success);">${sys.security_status.mitigated + sys.security_status.not_affected}</td>
+                        <td style="color:var(--danger);font-weight:${sys.security_status.unmitigated > 0 ? '700' : '400'};">${sys.security_status.unmitigated}</td>
+                        <td>${sys.uncovered_cves.length > 0 ? `<span style="color:var(--danger);" title="${escapeHtml(sys.uncovered_cves.join(', '))}">${sys.uncovered_cves.length} CVE${sys.uncovered_cves.length > 1 ? 's' : ''}</span>` : '<span class="text-muted">0</span>'}</td>
+                        <td><span class="status-badge ${p.cls}">${p.label}</span></td>
+                    </tr>`;
+                }).join('');
+            } catch(e) {
+                console.error('Security posture load error:', e);
+            }
+        }
+
+        async function loadVEXSummary() {
+            try {
+                const res = await apiFetch('/vex/summary');
+                if (res.ok) {
+                    const d = await res.json();
+                    document.getElementById('vex-affected').textContent = d.by_status?.affected || 0;
+                    document.getElementById('vex-not-affected').textContent = d.by_status?.not_affected || 0;
+                    document.getElementById('vex-fixed').textContent = d.by_status?.fixed || 0;
+                    document.getElementById('vex-investigating').textContent = d.by_status?.under_investigation || 0;
+                    const openCVEs = d.affected_unmitigated || 0;
+                    document.getElementById('kpi-open-cves').textContent = openCVEs;
+                    document.getElementById('nav-open-cves').textContent = openCVEs;
+                }
+            } catch(e) {}
+        }
+
+        function verdictBadge(verdict, control) {
+            const map = {
+                'mitigated_by_control': { cls: 'pass', label: 'Mitigated', icon: 'fa-shield-alt' },
+                'not_affected_vendor': { cls: 'info', label: 'Not Affected', icon: 'fa-check-circle' },
+                'fixed': { cls: 'info', label: 'Fixed', icon: 'fa-wrench' },
+                'fix_available': { cls: 'warn', label: 'Fix Available', icon: 'fa-exclamation-circle' },
+                'affected_unmitigated': { cls: 'fail', label: 'Unmitigated', icon: 'fa-times-circle' },
+                'under_investigation': { cls: 'warn', label: 'Investigating', icon: 'fa-search' },
+                'unknown': { cls: 'neutral', label: 'Unknown', icon: 'fa-question-circle' },
+            };
+            const v = map[verdict] || map['unknown'];
+            let badge = `<span class="status-badge ${v.cls}"><i class="fas ${v.icon}" style="margin-right:4px;"></i>${v.label}</span>`;
+            if (control && verdict === 'mitigated_by_control') {
+                badge += `<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${escapeHtml(control)}</div>`;
+            }
+            return badge;
+        }
+
+        async function loadVEXStatements() {
+            const tbody = document.getElementById('vex-statements-body');
+            const status = document.getElementById('vex-status-filter')?.value || '';
+            const cve = document.getElementById('vex-cve-filter')?.value || '';
+            let url = '/vex/statements?per_page=50';
+            if (status) url += `&status=${status}`;
+            if (cve) url += `&vulnerability=${encodeURIComponent(cve)}`;
+            try {
+                const res = await apiFetch(url);
+                if (!res.ok) return;
+                const data = await res.json();
+                const items = data.items || [];
+                if (items.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align: center; padding: 40px;">No VEX statements found</td></tr>';
+                    return;
+                }
+
+                // Fetch combined verdicts for each unique CVE
+                const uniqueCVEs = [...new Set(items.map(s => s.vulnerability_id))];
+                const verdictMap = {};
+                await Promise.all(uniqueCVEs.map(async cveId => {
+                    try {
+                        const sr = await apiFetch(`/vex/status/${encodeURIComponent(cveId)}`);
+                        if (sr.ok) {
+                            const sd = await sr.json();
+                            (sd.products || []).forEach(p => {
+                                const key = `${cveId}:${p.product_name}:${p.system_id || ''}`;
+                                verdictMap[key] = { verdict: p.combined_verdict, control: (p.mitigating_controls || []).filter(c => c.status === 'PASS').map(c => c.name).join(', '), reason: p.verdict_reason };
+                            });
+                        }
+                    } catch(e) {}
+                }));
+
+                tbody.innerHTML = items.map(s => {
+                    const statusClass = s.status === 'affected' ? 'fail' : s.status === 'not_affected' ? 'pass' : s.status === 'fixed' ? 'info' : 'warn';
+                    const key = `${s.vulnerability_id}:${s.product_name}:${s.system_id || ''}`;
+                    const vi = verdictMap[key] || { verdict: 'unknown', control: '', reason: '' };
+                    return `<tr>
+                        <td class="text-mono" style="font-weight: 600;">${escapeHtml(s.vulnerability_id)}</td>
+                        <td>${escapeHtml(s.product_name || '-')}</td>
+                        <td><span class="status-badge ${statusClass}">${escapeHtml(s.status.replace('_', ' '))}</span></td>
+                        <td>${verdictBadge(vi.verdict, vi.control)}${vi.reason ? `<div style="font-size:10px;color:var(--text-secondary);margin-top:3px;max-width:250px;">${escapeHtml(vi.reason)}</div>` : ''}</td>
+                        <td>${vi.control || '<span class="text-muted">none</span>'}</td>
+                        <td>${s.system_id ? s.system_id : '<span class="text-muted">unlinked</span>'}</td>
+                    </tr>`;
+                }).join('');
+            } catch(e) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align: center; padding: 40px;">No VEX data ingested yet</td></tr>';
+            }
+        }
+
+        async function loadVEXDocuments() {
+            const tbody = document.getElementById('vex-documents-body');
+            try {
+                const res = await apiFetch('/vex/documents');
+                if (res.ok) {
+                    const docs = await res.json();
+                    if (docs.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align: center; padding: 40px;">No VEX documents</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = docs.map(d => `<tr>
+                        <td class="text-mono" style="font-size: 12px;">${escapeHtml(d.document_id)}</td>
+                        <td><span class="status-badge info">${escapeHtml(d.format)}</span></td>
+                        <td>${escapeHtml(d.author || '-')}</td>
+                        <td class="text-muted">${d.published_at ? new Date(d.published_at).toLocaleDateString() : '-'}</td>
+                        <td style="font-weight: 600;">${d.statements_count}</td>
+                        <td class="text-muted">${new Date(d.created_at).toLocaleDateString()}</td>
+                    </tr>`).join('');
+                }
+            } catch(e) {}
+        }
+
+        async function loadSBOMSystemPicker() {
+            const picker = document.getElementById('sbom-system-picker');
+            if (!picker) return;
+            try {
+                const res = await apiFetch('/systems');
+                if (res.ok) {
+                    const data = await res.json();
+                    const systems = data.items || [];
+                    picker.innerHTML = '<option value="">Select system...</option>' +
+                        systems.map(s => `<option value="${s.id}">${escapeHtml(s.display_name)} (${escapeHtml(s.system_id)})</option>`).join('');
+                }
+            } catch(e) {}
+        }
+
+        async function uploadVEX() {
+            const fileInput = document.getElementById('vex-file-input');
+            const statusDiv = document.getElementById('upload-status');
+            if (!fileInput.files.length) { statusDiv.textContent = 'Please select a VEX file.'; return; }
+            const file = fileInput.files[0];
+            const text = await file.text();
+            statusDiv.textContent = 'Uploading VEX...';
+            try {
+                const res = await apiFetch('/vex/ingest', {method: 'POST', body: text, headers: {'Content-Type': 'application/json'}});
+                if (res.ok) {
+                    const data = await res.json();
+                    statusDiv.innerHTML = `<span style="color: var(--success);">VEX ingested: ${data.statements_count} statements from ${escapeHtml(data.document_id)}</span>`;
+                    fileInput.value = '';
+                    loadVulnerabilities();
+                } else {
+                    const err = await res.json();
+                    statusDiv.innerHTML = `<span style="color: var(--danger);">Error: ${escapeHtml(err.detail || 'Upload failed')}</span>`;
+                }
+            } catch(e) { statusDiv.innerHTML = `<span style="color: var(--danger);">Error: ${e.message}</span>`; }
+        }
+
+        async function uploadSBOM() {
+            const fileInput = document.getElementById('sbom-file-input');
+            const systemPicker = document.getElementById('sbom-system-picker');
+            const statusDiv = document.getElementById('upload-status');
+            const systemId = systemPicker.value;
+            if (!systemId) { statusDiv.textContent = 'Please select a system.'; return; }
+            if (!fileInput.files.length) { statusDiv.textContent = 'Please select an SBOM file.'; return; }
+            const file = fileInput.files[0];
+            const text = await file.text();
+            statusDiv.textContent = 'Uploading SBOM...';
+            try {
+                const res = await apiFetch(`/sbom/upload/${systemId}`, {method: 'POST', body: text, headers: {'Content-Type': 'application/json'}});
+                if (res.ok) {
+                    const data = await res.json();
+                    statusDiv.innerHTML = `<span style="color: var(--success);">SBOM uploaded: ${data.components_parsed} components parsed</span>`;
+                    fileInput.value = '';
+                } else {
+                    const err = await res.json();
+                    statusDiv.innerHTML = `<span style="color: var(--danger);">Error: ${escapeHtml(err.detail || 'Upload failed')}</span>`;
+                }
+            } catch(e) { statusDiv.innerHTML = `<span style="color: var(--danger);">Error: ${e.message}</span>`; }
+        }
+
         // =================================================================
         // Chat
         // =================================================================

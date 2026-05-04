@@ -26,6 +26,19 @@ pact:Control_CM7 pact:mitigates pact:Telnet_Exposure .
 pact:Control_CM7 pact:mitigates pact:CVE_2017_0144 .
 
 # NIST AC-3 (Access Enforcement) mitigates Log4Shell (by limiting what the compromised user can do/access)
-# This is a "Defense in Depth" mitigation, not a patch, but vital for "Mitigation Status".
 pact:Control_AC3 pact:mitigates pact:CVE_2021_44228 .
+
+pact:CVE_2023_44487 a pact:Vulnerability ;
+    rdfs:label "CVE-2023-44487 (HTTP/2 Rapid Reset)" ;
+    rdfs:comment "Denial of Service via HTTP/2 rapid stream resets." .
+
+pact:CVE_2023_39326 a pact:Vulnerability ;
+    rdfs:label "CVE-2023-39326 (Go net/http)" ;
+    rdfs:comment "Memory exhaustion in Go net/http server." .
+
+# CM-7 (Least Functionality) mitigates HTTP/2 Rapid Reset by restricting unnecessary protocols/services
+pact:Control_CM7 pact:mitigates pact:CVE_2023_44487 .
+
+# AC-3 (Access Enforcement) mitigates Go net/http exhaustion by limiting access to vulnerable endpoints
+pact:Control_AC3 pact:mitigates pact:CVE_2023_39326 .
 
